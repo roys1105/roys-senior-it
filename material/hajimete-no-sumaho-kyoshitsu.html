@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>はじめてのスマホ教室｜Roy's Channel</title>
+<style>
+  :root{
+    --navy:#1F5A72;
+    --navy-dark:#17465A;
+    --cream:#F8E3C4;
+    --green:#E8F1E6;
+    --border:#D7E6EA;
+    --text:#33505A;
+    --sub:#55747C;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+    background:#F4F8F9;
+    color:var(--text);
+    line-height:1.85;
+  }
+  a{color:inherit;}
+  .top-link{
+    display:block;
+    text-align:center;
+    padding:10px;
+    background:var(--navy);
+    color:#fff;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:700;
+  }
+  header.hero{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);
+    color:#fff;
+    padding:56px 24px 64px;
+    text-align:center;
+  }
+  header.hero .badge{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    padding:6px 18px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.15);
+    margin-bottom:18px;
+  }
+  header.hero h1{
+    margin:0 0 14px;
+    font-size:clamp(28px,6vw,42px);
+    font-weight:900;
+  }
+  header.hero p{
+    margin:0;
+    font-size:17px;
+    opacity:0.92;
+    max-width:520px;
+    margin:0 auto;
+  }
+  header.hero .who{
+    margin-top:24px;
+    font-size:14px;
+    opacity:0.85;
+  }
+
+  main{
+    max-width:820px;
+    margin:0 auto;
+    padding:0 20px;
+  }
+
+  .intro-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:30px 28px;
+    margin:-36px 0 32px;
+    box-shadow:0 6px 20px rgba(31,90,114,0.1);
+  }
+  .intro-card h2{
+    margin:0 0 10px;
+    font-size:19px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  .intro-card p{
+    margin:0;
+    font-size:15px;
+    color:var(--text);
+  }
+
+  .tips{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:18px;
+    margin-bottom:48px;
+  }
+  .tip-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:26px 22px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+    text-align:center;
+  }
+  .tip-card .icon{
+    width:52px;height:52px;
+    border-radius:16px;
+    background:var(--green);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+    font-size:24px;
+  }
+  .tip-card h3{
+    margin:0 0 8px;
+    font-size:16px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  .tip-card p{
+    margin:0;
+    font-size:14px;
+    color:var(--sub);
+  }
+
+  nav.toc{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:28px 26px;
+    margin-bottom:48px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+  }
+  nav.toc h2{
+    margin:0 0 16px;
+    font-size:20px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  nav.toc ol{
+    margin:0;
+    padding:0;
+    list-style:none;
+    display:grid;
+    gap:10px;
+  }
+  nav.toc a{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    text-decoration:none;
+    padding:10px 12px;
+    border-radius:12px;
+    font-weight:700;
+    color:var(--text);
+    font-size:15px;
+  }
+  nav.toc a:hover{ background:var(--green); }
+  nav.toc .num{
+    width:30px;height:30px;
+    flex:none;
+    border-radius:50%;
+    background:var(--navy);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;
+    font-weight:900;
+  }
+
+  section.chapter{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:36px 30px;
+    margin-bottom:32px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+    scroll-margin-top:24px;
+  }
+  section.chapter .chapter-label{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    padding:5px 14px;
+    border-radius:999px;
+    background:var(--cream);
+    color:#7A5A2E;
+    margin-bottom:14px;
+  }
+  section.chapter h2{
+    margin:0 0 26px;
+    font-size:25px;
+    color:var(--navy);
+    font-weight:900;
+  }
+
+  .subsection{ margin-bottom:28px; }
+  .subsection:last-child{ margin-bottom:0; }
+  .subsection h3{
+    margin:0 0 12px;
+    font-size:17px;
+    color:var(--navy-dark);
+    font-weight:900;
+  }
+  .subsection p.lead{
+    margin:0 0 14px;
+    font-size:15px;
+    color:var(--text);
+  }
+
+  .steps{
+    display:grid;
+    gap:12px;
+  }
+  .step{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    background:var(--green);
+    border-radius:14px;
+    padding:14px 18px;
+  }
+  .step .dot{
+    flex:none;
+    width:8px;height:8px;
+    border-radius:50%;
+    background:var(--navy);
+    margin-top:9px;
+  }
+  .step p{
+    margin:0;
+    font-size:16px;
+    color:var(--text);
+  }
+
+  .diagram{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--cream);
+    border-radius:14px;
+    padding:14px 18px;
+    margin-top:14px;
+    font-size:14px;
+    color:#7A5A2E;
+    font-weight:700;
+  }
+  .diagram .icon{ font-size:22px; }
+
+  .tipbox{
+    display:flex;
+    gap:14px;
+    background:#FFF8E9;
+    border:1px solid var(--cream);
+    border-radius:14px;
+    padding:18px 20px;
+    margin-top:16px;
+  }
+  .tipbox .icon{ font-size:22px; flex:none; }
+  .tipbox .body h4{
+    margin:0 0 8px;
+    font-size:15px;
+    color:#7A5A2E;
+    font-weight:900;
+  }
+  .tipbox .body ul{
+    margin:0;
+    padding-left:18px;
+    font-size:14px;
+    color:var(--text);
+  }
+  .tipbox .body li{ margin-bottom:4px; }
+
+  .apps-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:15px;
+  }
+  .apps-table td{
+    padding:12px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  .apps-table td:first-child{
+    font-weight:700;
+    color:var(--navy);
+    white-space:nowrap;
+  }
+
+  section.checklist{
+    background:var(--navy);
+    color:#fff;
+    border-radius:24px;
+    padding:40px 30px;
+    margin-bottom:32px;
+  }
+  section.checklist h2{
+    margin:0 0 22px;
+    font-size:24px;
+    font-weight:900;
+    text-align:center;
+  }
+  .checklist-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:12px;
+  }
+  .checklist-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:rgba(255,255,255,0.1);
+    border-radius:14px;
+    padding:14px 16px;
+    font-size:15px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .checklist-item input{
+    width:22px;height:22px;
+    flex:none;
+    accent-color:#F8E3C4;
+  }
+  .checklist-item.checked{
+    background:rgba(255,255,255,0.22);
+    text-decoration:line-through;
+    opacity:0.75;
+  }
+
+  section.faq{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:36px 30px;
+    margin-bottom:32px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+  }
+  section.faq h2{
+    margin:0 0 24px;
+    font-size:24px;
+    color:var(--navy);
+    font-weight:900;
+    text-align:center;
+  }
+  .faq-item{
+    border-radius:14px;
+    background:var(--green);
+    padding:18px 20px;
+    margin-bottom:14px;
+  }
+  .faq-item:last-child{ margin-bottom:0; }
+  .faq-item .q{
+    margin:0 0 8px;
+    font-weight:900;
+    color:var(--navy);
+    font-size:16px;
+  }
+  .faq-item .a{
+    margin:0;
+    font-size:15px;
+    color:var(--text);
+  }
+
+  footer.closing{
+    text-align:center;
+    padding:48px 24px 64px;
+  }
+  footer.closing .emoji{ font-size:40px; margin-bottom:14px; }
+  footer.closing h2{
+    margin:0 0 10px;
+    font-size:26px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  footer.closing p{
+    margin:0 0 28px;
+    font-size:16px;
+    color:var(--sub);
+  }
+  footer.closing .back{
+    display:inline-block;
+    padding:14px 32px;
+    background:var(--navy);
+    color:#fff;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:15px;
+  }
+</style>
+</head>
+<body>
+
+<a class="top-link" href="../index.html">← Roy's Channel トップに戻る</a>
+
+<header class="hero">
+  <span class="badge">教材のご紹介</span>
+  <h1>はじめてのスマホ教室</h1>
+  <p>〜家族といっしょに、スマホデビューを応援する教科書〜</p>
+  <div class="who">対象：スマートフォンをはじめて使う方　/　使う人：教えてあげるご家族（お子さん・お孫さん）</div>
+</header>
+
+<main>
+
+  <div class="intro-card">
+    <h2>この教材の使い方（教える方へ）</h2>
+    <p>この教材は、スマホを初めて使うご家族に、優しく教えてあげるためのテキストです。1回で全部教えようとせず、1回30分くらい、1つの章ずつゆっくり進めるのがおすすめです。</p>
+  </div>
+
+  <div class="tips">
+    <div class="tip-card">
+      <div class="icon">🐢</div>
+      <h3>急がない</h3>
+      <p>ご本人のペースに合わせる。1つの操作ができるまで待つ。</p>
+    </div>
+    <div class="tip-card">
+      <div class="icon">💬</div>
+      <h3>専門用語を使わない</h3>
+      <p>「タップ」ではなく「軽く1回押す」のように言い換える。</p>
+    </div>
+    <div class="tip-card">
+      <div class="icon">📝</div>
+      <h3>メモを残す</h3>
+      <p>教えた手順を紙に書いて渡すと、一人でも思い出せる。</p>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <h2>目次</h2>
+    <ol>
+      <li><a href="#ch1"><span class="num">1</span>スマホの基本のキ（電源・画面・タップ操作）</a></li>
+      <li><a href="#ch2"><span class="num">2</span>電話をかけてみよう</a></li>
+      <li><a href="#ch3"><span class="num">3</span>LINEを使ってみよう</a></li>
+      <li><a href="#ch4"><span class="num">4</span>写真を撮ってみよう</a></li>
+      <li><a href="#ch5"><span class="num">5</span>便利なアプリを使ってみよう</a></li>
+      <li><a href="#ch6"><span class="num">6</span>安全に使うために</a></li>
+      <li><a href="#checklist"><span class="num">巻</span>練習チェックリスト／よくあるトラブルQ&amp;A</a></li>
+    </ol>
+  </nav>
+
+  <section class="chapter" id="ch1">
+    <span class="chapter-label">第1章</span>
+    <h2>スマホの基本のキ</h2>
+
+    <div class="subsection">
+      <h3>1-1　電源の入れ方・切り方</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>本体の横（右側または上側）にある「電源ボタン」を、1〜2秒押す。</p></div>
+        <div class="step"><div class="dot"></div><p>画面が明るくなったら成功。もう一度押すと画面が消える（スリープ）。</p></div>
+        <div class="step"><div class="dot"></div><p>完全に電源を切るときは、電源ボタンを長押しして、画面の指示に従う。</p></div>
+      </div>
+      <div class="tipbox">
+        <div class="icon">💡</div>
+        <div class="body">
+          <h4>教えるコツ</h4>
+          <ul>
+            <li>最初は「画面を消すだけ」（スリープ）と「電源を切る」の違いを説明する。</li>
+            <li>普段は消す（スリープ）だけでOK、と伝えると安心する。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>1-2　画面の見かた</h3>
+      <p class="lead">スマホの画面には、いろいろな絵（アイコン）が並んでいます。これを「ホーム画面」と呼びます。それぞれのアイコンが、電話・カメラ・LINEなど、別々の機能につながっています。</p>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>緑色の受話器マーク → 電話</p></div>
+        <div class="step"><div class="dot"></div><p>緑色の丸いマーク → LINE</p></div>
+        <div class="step"><div class="dot"></div><p>カメラの形のマーク → カメラ</p></div>
+        <div class="step"><div class="dot"></div><p>時計のマーク → 時計・アラーム</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：ホーム画面のアイコンの見分け方</span></div>
+    </div>
+
+    <div class="subsection">
+      <h3>1-3　基本の指の動かし方</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>タップ（軽く1回押す）：アイコンを開くとき</p></div>
+        <div class="step"><div class="dot"></div><p>スワイプ（指を滑らせる）：画面を切り替えるとき</p></div>
+        <div class="step"><div class="dot"></div><p>ピンチ（2本指で広げる／縮める）：写真や地図を拡大・縮小するとき</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：3つの基本操作（タップ・スワイプ・ピンチ）</span></div>
+      <div class="tipbox">
+        <div class="icon">💡</div>
+        <div class="body">
+          <h4>練習方法</h4>
+          <ul>
+            <li>ホーム画面で、指1本で画面を左右にすーっと滑らせる練習をする。</li>
+            <li>何もない場所を触っても壊れないので、安心して触ってもらう。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>1-4　文字を大きくする・音量を調整する</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>「設定」のアイコン（歯車マーク）をタップする。</p></div>
+        <div class="step"><div class="dot"></div><p>「画面表示」または「文字サイズ」を選ぶ。</p></div>
+        <div class="step"><div class="dot"></div><p>スライダーを右に動かすと、文字が大きくなる。</p></div>
+        <div class="step"><div class="dot"></div><p>音量は、本体の横にある「＋」「－」ボタンで調整できる。見えにくい・聞こえにくいと感じたら、遠慮せず調整してあげましょう。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="ch2">
+    <span class="chapter-label">第2章</span>
+    <h2>電話をかけてみよう</h2>
+
+    <div class="subsection">
+      <h3>2-1　電話帳（連絡先）の見かた</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>「電話」のアイコンをタップする。</p></div>
+        <div class="step"><div class="dot"></div><p>画面下の「連絡先」を選ぶと、登録されている名前の一覧が出る。</p></div>
+        <div class="step"><div class="dot"></div><p>かけたい人の名前をタップすると、詳細画面が出る。</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>2-2　電話のかけかた・受けかた</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>かける：名前をタップ→緑の受話器マークをタップ</p></div>
+        <div class="step"><div class="dot"></div><p>受ける：画面に出てきた緑のマークを右にスワイプ（機種による）</p></div>
+        <div class="step"><div class="dot"></div><p>切る：赤い受話器マークをタップ</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：連絡先から電話をかける流れ</span></div>
+      <div class="tipbox">
+        <div class="icon">💡</div>
+        <div class="body">
+          <h4>よくある失敗</h4>
+          <ul>
+            <li>ポケットの中で誤って電話をかけてしまう「ポケット発信」。心配な場合は画面ロックを設定する。</li>
+            <li>着信中に焦って画面を強く押しすぎることが多い。「軽く触るだけでいい」と伝える。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="ch3">
+    <span class="chapter-label">第3章</span>
+    <h2>LINEを使ってみよう</h2>
+
+    <div class="subsection">
+      <h3>3-1　LINEって何？</h3>
+      <p class="lead">LINE（ライン）は、家族や友だちと無料でメッセージのやり取りができるアプリです。文字だけでなく、スタンプや写真、ビデオ通話も使えます。</p>
+    </div>
+
+    <div class="subsection">
+      <h3>3-2　友だち追加</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>LINEを開き、右上の「友だち追加」ボタンをタップする。</p></div>
+        <div class="step"><div class="dot"></div><p>「QRコード」を選び、相手のQRコードを画面に映す。</p></div>
+        <div class="step"><div class="dot"></div><p>自動で読み込まれ、友だちに追加される。</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：QRコードで友だち追加してメッセージを送るまでの流れ</span></div>
+      <div class="tipbox">
+        <div class="icon">💡</div>
+        <div class="body">
+          <h4>教えるコツ</h4>
+          <ul>
+            <li>最初の1人（お子さんかお孫さん）を、隣で一緒に登録してあげると安心する。</li>
+            <li>QRコードは難しく感じやすいので、実際に画面を見せながら2〜3回練習する。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>3-3　メッセージ・スタンプの送り方</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>トーク画面を開き、下の入力欄をタップする。</p></div>
+        <div class="step"><div class="dot"></div><p>キーボードで文字を入力する。</p></div>
+        <div class="step"><div class="dot"></div><p>スタンプは、入力欄の左側にある顔のマークから選べる。文字を打つのが大変なときは、スタンプだけでも十分気持ちが伝わる。</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>3-4　ビデオ通話のかけかた</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>トーク画面を開き、右上の電話マークをタップする。</p></div>
+        <div class="step"><div class="dot"></div><p>「ビデオ通話」を選ぶ。</p></div>
+        <div class="step"><div class="dot"></div><p>相手が出ると、顔を見ながら話せる。</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：ビデオ通話をかけるまでの流れ</span></div>
+    </div>
+  </section>
+
+  <section class="chapter" id="ch4">
+    <span class="chapter-label">第4章</span>
+    <h2>写真を撮ってみよう</h2>
+
+    <div class="subsection">
+      <h3>4-1　カメラの使いかた</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>カメラのアイコンをタップして起動する。</p></div>
+        <div class="step"><div class="dot"></div><p>画面に映したいものを映す。</p></div>
+        <div class="step"><div class="dot"></div><p>白い丸いボタンをタップするとシャッターが切れる。</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：写真の撮り方の3ステップ</span></div>
+      <div class="tipbox">
+        <div class="icon">💡</div>
+        <div class="body">
+          <h4>よくある悩み</h4>
+          <ul>
+            <li>ボタンを押した瞬間に手が動いてブレることが多い。「押したあと1秒待つ」とブレにくい。</li>
+            <li>自分を撮りたいときは、カメラマークの近くにある「切り替えボタン」でインカメラに変えられる。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>4-2　写真を見る・家族に送る</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>「写真」または「アルバム」のアイコンをタップする。</p></div>
+        <div class="step"><div class="dot"></div><p>見たい写真をタップすると大きく表示される。</p></div>
+        <div class="step"><div class="dot"></div><p>LINEで送るときは、写真を選んで「共有」ボタン→LINEを選び、送りたい相手を選ぶ。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="ch5">
+    <span class="chapter-label">第5章</span>
+    <h2>便利なアプリを使ってみよう</h2>
+
+    <div class="subsection">
+      <h3>5-1　天気予報</h3>
+      <p class="lead">最初から入っている「天気」アプリを開くだけで、今日と1週間の天気がすぐわかります。傘が必要かどうかの目安にもなります。</p>
+    </div>
+
+    <div class="subsection">
+      <h3>5-2　地図・道案内</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>「マップ」または「地図」アプリを開く。</p></div>
+        <div class="step"><div class="dot"></div><p>上の検索欄に行きたい場所の名前を入力する。</p></div>
+        <div class="step"><div class="dot"></div><p>「経路」ボタンを押すと、今いる場所からの道順が表示される。</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3>5-3　ニュース</h3>
+      <p class="lead">ニュースアプリやブラウザのトップページから、天気と同じ感覚で最新のニュースを読むことができます。文字が小さいときは、1-4で紹介した「文字を大きくする設定」を活用しましょう。</p>
+    </div>
+
+    <div class="subsection">
+      <h3>5-4　おすすめのアプリ一覧</h3>
+      <p class="lead">どのアプリを入れたらいいか迷ったら、まずはこの6つがおすすめです。どれも無料で使えます。</p>
+      <table class="apps-table">
+        <tr><td>天気</td><td>Yahoo!天気</td></tr>
+        <tr><td>地図</td><td>Googleマップ</td></tr>
+        <tr><td>ニュース</td><td>Yahoo!ニュース</td></tr>
+        <tr><td>防災情報</td><td>NHK ニュース・防災</td></tr>
+        <tr><td>乗換案内</td><td>Yahoo!乗換案内</td></tr>
+        <tr><td>健康管理</td><td>ヘルスケア／Google Fit</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="chapter" id="ch6">
+    <span class="chapter-label">第6章</span>
+    <h2>安全に使うために</h2>
+
+    <div class="subsection">
+      <h3>6-1　迷惑電話・詐欺に気をつける</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>知らない番号からの電話には、すぐに出なくてもよい。留守番電話で内容を確認してから折り返す。</p></div>
+        <div class="step"><div class="dot"></div><p>「今すぐお金を振り込んで」というメッセージや電話は、まず家族に相談する。</p></div>
+        <div class="step"><div class="dot"></div><p>LINEやメールに来た知らないリンクは、むやみにタップしない。</p></div>
+      </div>
+      <div class="diagram"><span class="icon">🖼️</span><span>図：安全に使うための3つのポイント</span></div>
+    </div>
+
+    <div class="subsection">
+      <h3>6-2　パスワードの管理</h3>
+      <div class="steps">
+        <div class="step"><div class="dot"></div><p>画面ロックの暗証番号（パスコード）は、他人にわからない数字にする。</p></div>
+        <div class="step"><div class="dot"></div><p>誕生日など推測されやすい数字は避ける。</p></div>
+        <div class="step"><div class="dot"></div><p>パスコードは紙に書いて、スマホとは別の安全な場所に保管する。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="checklist" id="checklist">
+    <h2>練習チェックリスト</h2>
+    <div class="checklist-grid">
+      <label class="checklist-item"><input type="checkbox">電源を入れる・画面を消すができる</label>
+      <label class="checklist-item"><input type="checkbox">ホーム画面からアイコンをタップできる</label>
+      <label class="checklist-item"><input type="checkbox">文字の大きさを変えられる</label>
+      <label class="checklist-item"><input type="checkbox">電話をかけられる／受けられる</label>
+      <label class="checklist-item"><input type="checkbox">LINEで友だちを追加できる</label>
+      <label class="checklist-item"><input type="checkbox">LINEでメッセージ・スタンプを送れる</label>
+      <label class="checklist-item"><input type="checkbox">LINEでビデオ通話ができる</label>
+      <label class="checklist-item"><input type="checkbox">写真を撮れる</label>
+      <label class="checklist-item"><input type="checkbox">撮った写真をLINEで送れる</label>
+      <label class="checklist-item"><input type="checkbox">天気予報を見られる</label>
+      <label class="checklist-item"><input type="checkbox">地図で道順を調べられる</label>
+      <label class="checklist-item"><input type="checkbox">怪しい電話・メッセージに気をつけられる</label>
+    </div>
+  </section>
+
+  <section class="faq">
+    <h2>よくあるトラブル Q&amp;A</h2>
+    <div class="faq-item">
+      <p class="q">Q. 画面が真っ暗になって反応しない</p>
+      <p class="a">A. 電源ボタンを長押し（10秒程度）すると再起動できることが多いです。それでも直らない場合は、購入店やキャリアショップに相談しましょう。</p>
+    </div>
+    <div class="faq-item">
+      <p class="q">Q. 文字が小さくて読めない</p>
+      <p class="a">A. 「設定」→「画面表示」または「文字サイズ」から、文字を大きくできます（1-4参照）。</p>
+    </div>
+    <div class="faq-item">
+      <p class="q">Q. 間違えて変な画面が出てきた</p>
+      <p class="a">A. 多くの場合、画面を下から上にスワイプするか、丸いボタン（ホームボタン）を押すとホーム画面に戻れます。慌てず戻ればOKです。</p>
+    </div>
+    <div class="faq-item">
+      <p class="q">Q. LINEの通知音が鳴らない</p>
+      <p class="a">A. 「設定」→「通知」→「LINE」の通知がオンになっているか確認しましょう。</p>
+    </div>
+    <div class="faq-item">
+      <p class="q">Q. 知らない人から電話がかかってきた</p>
+      <p class="a">A. 無理に出る必要はありません。不安なときは家族に相談してから折り返しましょう。</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="closing">
+  <div class="emoji">🌱</div>
+  <h2>焦らず、一緒に、少しずつ。</h2>
+  <p>ご家族のペースに合わせて、何度でも一緒に練習しましょう。</p>
+  <a class="back" href="../index.html">Roy's Channel トップに戻る</a>
+</footer>
+
+<script>
+document.querySelectorAll('.checklist-item input').forEach(function(cb){
+  cb.addEventListener('change', function(){
+    cb.closest('.checklist-item').classList.toggle('checked', cb.checked);
+  });
+});
+</script>
+
+</body>
+</html>
