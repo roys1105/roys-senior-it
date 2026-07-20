@@ -1,0 +1,13 @@
+page len: 749329
+course section: 733650 735021
+<section id="course" data-screen-label="教材紹介" style="padding:56px 24px; scroll-margin-top:96px;">
+    <div style="max-width:880px; margin:0 auto; background:#FFFFFF; border:1px solid #D7E6EA; border-radius:24px; padding:36px; display:grid; grid-template-columns:260px 1fr; gap:32px; align-items:center; box-shadow:0 4px 16px rgba(31,90,114,0.06);">
+      <image-slot id="course-cover" style="width:100%; aspect-ratio:4/3;" shape="rounded" radius="18" placeholder="教材「はじめてのスマホ教室」の表紙"></image-slot>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <span style="display:inline-block; align-self:flex-start; font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px; background:#E1F0F3; color:#1F5A72;">教材のご紹介</span>
+        <h2 style="margin:0; font-size:24px; color:#1F5A72; font-weight:900;">はじめてのスマホ教室</h2>
+        <p style="margin:0; font-size:15px; color:#33505A;">「電源の入れ方から、写真の送り方、LINEの使い方まで」。スマホがはじめての方でも迷わず進められるよう、順を追って動画とテキストでやさしく解説する教材です。</p>
+        <a href="#contact" style="align-self:flex-start; margin-top:6px; padding:13px 28px; background:#1F5A72; color:#fff; border-radius:999px; text-decoration:none; font-weight:700; font-size:15px; transition:transform 0.2s ease, box-shadow 0.2s ease;" style-hover="transform:translateY(-4px); box-shadow:0 8px 18px rgba(31,90,114,0.35);">くわしく問い合わせる</a>
+      </div>
+    </div>
+  </section>
