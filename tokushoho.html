@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>特定商取引法に基づく表記 | Roy's Channel</title>
+<script>
+(function(){
+  try{
+    fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({type:"visit",page:"/tokushoho.html"})
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
 <style>
   :root {
     --bg: #FAFAF7;
