@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>脳いきいき手帳（無料アプリ）｜うどん県発！ITシニアなんでも相談室</title>
+<meta name="description" content="毎日5分の脳トレ・からだ・記録がひとつになった、シニア向けの無料アプリ「脳いきいき手帳」。インストール不要、スマホ・タブレット・パソコンのブラウザですぐ使えます。">
+<script>
+(function(){
+  try{
+    fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({type:"material",page:"/materials/nouikiiki-tebo.html"})
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+<style>
+  :root{
+    --navy:#1F5A72;
+    --navy-dark:#17465A;
+    --cream:#F8E3C4;
+    --green:#E8F1E6;
+    --border:#D7E6EA;
+    --text:#33505A;
+    --sub:#55747C;
+    --app:#4F6E56;
+    --app-dark:#3E5744;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+    background:#F4F8F9;
+    color:var(--text);
+    line-height:1.85;
+  }
+  a{color:inherit;}
+  img{max-width:100%;}
+
+  .top-link{
+    display:block;
+    text-align:right;
+    padding:10px 20px;
+    background:var(--navy);
+    color:#fff;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:700;
+  }
+  .top-link:hover{ text-decoration:underline; }
+
+  header.hero{
+    background:linear-gradient(135deg,var(--app) 0%,var(--app-dark) 100%);
+    color:#fff;
+    padding:52px 24px 60px;
+    text-align:center;
+  }
+  header.hero .badge{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    padding:6px 18px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.18);
+    margin-bottom:18px;
+  }
+  header.hero .cat{
+    width:88px;height:88px;
+    border-radius:26px;
+    display:block;
+    margin:0 auto 16px;
+    box-shadow:0 8px 22px rgba(0,0,0,0.18);
+  }
+  header.hero h1{
+    margin:0 0 14px;
+    font-size:clamp(28px,6vw,42px);
+    font-weight:900;
+  }
+  header.hero p{
+    margin:0 auto;
+    font-size:17px;
+    opacity:0.94;
+    max-width:560px;
+  }
+
+  main{
+    max-width:820px;
+    margin:0 auto;
+    padding:0 20px;
+  }
+
+  .launch-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:28px 26px;
+    margin:-34px 0 34px;
+    box-shadow:0 6px 20px rgba(31,90,114,0.1);
+    text-align:center;
+  }
+  .launch-card h2{
+    margin:0 0 8px;
+    font-size:19px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  .launch-card p{
+    margin:0 0 20px;
+    font-size:15px;
+    color:var(--sub);
+  }
+  .launch-btn{
+    display:inline-block;
+    padding:18px 40px;
+    background:var(--app);
+    color:#fff;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:900;
+    font-size:19px;
+    box-shadow:0 6px 16px rgba(79,110,86,0.35);
+  }
+  .launch-btn:hover{ background:var(--app-dark); }
+  .launch-note{
+    margin:16px 0 0;
+    font-size:13px;
+    color:var(--sub);
+  }
+
+  h2.sec{
+    margin:0 0 18px;
+    font-size:24px;
+    color:var(--navy);
+    font-weight:900;
+    text-align:center;
+  }
+  p.sec-lead{
+    margin:0 0 26px;
+    text-align:center;
+    font-size:15px;
+    color:var(--sub);
+  }
+
+  .tips{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:18px;
+    margin-bottom:48px;
+  }
+  .tip-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:26px 22px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+    text-align:center;
+  }
+  .tip-card .icon{
+    width:52px;height:52px;
+    border-radius:16px;
+    background:var(--green);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;
+    font-size:24px;
+  }
+  .tip-card h3{
+    margin:0 0 8px;
+    font-size:16px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  .tip-card p{
+    margin:0;
+    font-size:14px;
+    color:var(--sub);
+  }
+
+  .shots{ margin-bottom:48px; }
+  .shot{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:26px;
+    margin-bottom:24px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+    display:grid;
+    grid-template-columns:210px 1fr;
+    gap:28px;
+    align-items:center;
+  }
+  .shot img{
+    width:210px;
+    border-radius:18px;
+    border:1px solid var(--border);
+    display:block;
+  }
+  .shot .label{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    padding:5px 14px;
+    border-radius:999px;
+    background:var(--cream);
+    color:#7A5A2E;
+    margin-bottom:12px;
+  }
+  .shot h3{
+    margin:0 0 10px;
+    font-size:20px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  .shot p{
+    margin:0 0 10px;
+    font-size:15px;
+  }
+  .shot ul{
+    margin:0;
+    padding-left:1.2em;
+    font-size:14.5px;
+    color:var(--sub);
+  }
+  .shot li{ margin-bottom:4px; }
+  @media (max-width:640px){
+    .shot{ grid-template-columns:1fr; gap:20px; justify-items:center; }
+    .shot img{ width:min(260px,80%); }
+    .shot .body{ width:100%; }
+  }
+
+  .howto{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:32px 30px;
+    margin-bottom:32px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+  }
+  .howto h2{
+    margin:0 0 8px;
+    font-size:22px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  .howto > p.lead{
+    margin:0 0 22px;
+    font-size:15px;
+    color:var(--sub);
+  }
+  .howto h3{
+    margin:22px 0 12px;
+    font-size:17px;
+    color:var(--navy-dark);
+    font-weight:900;
+  }
+  .steps{ display:grid; gap:12px; }
+  .step{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    background:var(--green);
+    border-radius:14px;
+    padding:14px 18px;
+    font-size:15px;
+  }
+  .step .dot{
+    flex:none;
+    width:26px;height:26px;
+    border-radius:50%;
+    background:var(--navy);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;
+    font-weight:900;
+    margin-top:2px;
+  }
+
+  .note-card{
+    background:#FFF7E8;
+    border:1px solid #EBD9B4;
+    border-radius:20px;
+    padding:26px 24px;
+    margin-bottom:40px;
+  }
+  .note-card h2{
+    margin:0 0 12px;
+    font-size:18px;
+    color:#7A5A2E;
+    font-weight:900;
+  }
+  .note-card ul{
+    margin:0;
+    padding-left:1.2em;
+    font-size:14.5px;
+    color:#6B5735;
+  }
+  .note-card li{ margin-bottom:6px; }
+
+  footer.closing{
+    text-align:center;
+    padding:8px 24px 64px;
+  }
+  footer.closing .emoji{ font-size:40px; margin-bottom:14px; }
+  footer.closing h2{
+    margin:0 0 10px;
+    font-size:26px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  footer.closing p{
+    margin:0 0 28px;
+    font-size:16px;
+    color:var(--sub);
+  }
+  footer.closing .back{
+    display:inline-block;
+    padding:14px 32px;
+    background:var(--navy);
+    color:#fff;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:15px;
+  }
+</style>
+</head>
+<body>
+
+<a class="top-link" href="../index.html">トップに戻る</a>
+
+<header class="hero">
+  <img class="cat" src="../nouikiiki/icon-512.png" alt="脳いきいき手帳のアイコン（黒猫のクロ）">
+  <span class="badge">無料アプリのご紹介</span>
+  <h1>脳いきいき手帳</h1>
+  <p>毎日5分。脳トレ・からだ・記録が、ひとつになった手帳アプリです。<br>案内役は、黒猫の「クロ」。</p>
+</header>
+
+<main>
+
+  <div class="launch-card">
+    <h2>いますぐ、お試しいただけます</h2>
+    <p>下のボタンを押すと、別のページでアプリが開きます。<br>申し込みや会員登録はいりません。無料です。</p>
+    <a class="launch-btn" href="../nouikiiki/" target="_blank" rel="noopener">脳いきいき手帳をひらく</a>
+    <p class="launch-note">※新しいページ（別のタブ）で開きます。閉じれば、このページに戻ってこられます。</p>
+  </div>
+
+  <h2 class="sec">こんな方に</h2>
+  <p class="sec-lead">「難しいことはいらない。毎日ちょっとだけ、続けたい」という方のために作りました。</p>
+  <div class="tips">
+    <div class="tip-card">
+      <div class="icon">🧠</div>
+      <h3>頭の体操を習慣に</h3>
+      <p>計算・ことば・記憶など、日替わりで楽しめる脳トレが10種類以上。</p>
+    </div>
+    <div class="tip-card">
+      <div class="icon">📅</div>
+      <h3>続いたことが見える</h3>
+      <p>やった日はカレンダーが緑色に。連続日数も出るので、励みになります。</p>
+    </div>
+    <div class="tip-card">
+      <div class="icon">👪</div>
+      <h3>ひとりでも、みんなでも</h3>
+      <p>ご家族との共有や、施設のレクリエーションにもお使いいただけます。</p>
+    </div>
+  </div>
+
+  <h2 class="sec">どんな画面か、見てみましょう</h2>
+  <p class="sec-lead">実際の画面です。文字は大きく、ボタンは押しやすく作ってあります。</p>
+
+  <div class="shots">
+
+    <div class="shot">
+      <img src="../image/nouikiiki/home.png" alt="ホーム画面。あいさつと、今日のおすすめ、連続日数が表示されている">
+      <div class="body">
+        <span class="label">ホーム</span>
+        <h3>開くだけで、今日やることが決まる</h3>
+        <p>アプリを開くと、黒猫のクロが声をかけてくれます。「今日のおすすめ」を押すだけで始められるので、迷いません。</p>
+        <ul>
+          <li>連続日数と、今月の実施回数がひと目でわかる</li>
+          <li>その日にやることは、こちらから提案します</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/asobu.png" alt="脳トレメニュー画面。記憶力ゲーム、順番おぼえ、脳トレクイズ、計算ドリルなどが並んでいる">
+      <div class="body">
+        <span class="label">脳トレ</span>
+        <h3>10種類以上。飽きずに続けられます</h3>
+        <p>「おぼえる・思い出す」「考える・計算する」「ことば」など、鍛えたい力ごとに分かれています。</p>
+        <ul>
+          <li>記憶力ゲーム／順番おぼえ／なかまはずれさがし</li>
+          <li>脳トレクイズ／計算ドリル／ことばさがし ほか</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/find.png" alt="なかまはずれさがしの画面。同じ絵の中に1つだけ違う絵がある">
+      <div class="body">
+        <span class="label">脳トレの例</span>
+        <h3>ルールは、ひと目でわかる簡単さ</h3>
+        <p>たとえば「なかまはずれさがし」は、1つだけちがう絵をさがすだけ。説明を読まなくても始められます。</p>
+        <ul>
+          <li>進むほど少しずつ難しくなります</li>
+          <li>まちがえても大丈夫。何度でもやり直せます</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/calendar.png" alt="記録カレンダー画面。脳トレをした日が緑色に塗られている">
+      <div class="body">
+        <span class="label">きろく</span>
+        <h3>「続いている」が、目で見てわかる</h3>
+        <p>脳トレをした日は、カレンダーが緑色になります。塗りつぶされていくのが、いちばんの励みになります。</p>
+        <ul>
+          <li>連続日数・今月の実施回数を自動で集計</li>
+          <li>この2週間のようすをグラフで表示</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/karada.png" alt="からだとくらしの画面。いきいき体操、コグニサイズ、生活チェックなどが並んでいる">
+      <div class="body">
+        <span class="label">からだ</span>
+        <h3>頭だけでなく、からだと暮らしも</h3>
+        <p>からだを動かすこと・人と話すこと・よく眠ることは、頭の元気ともつながっていると言われています。</p>
+        <ul>
+          <li>いすに座ったままできる「いきいき体操」（声の案内つき）</li>
+          <li>足ぶみしながら数える「コグニサイズ」</li>
+          <li>今日の生活チェック（6つのいきいき習慣）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/minna.png" alt="みんなと の画面。家族と共有する、思い出ばなし、みんなでレクが並んでいる">
+      <div class="body">
+        <span class="label">みんなと</span>
+        <h3>ご家族と、施設のレクリエーションにも</h3>
+        <p>人と話すこと・思い出を語ることは、脳にとって大きな刺激になります。おひとりでも、大勢でも使えます。</p>
+        <ul>
+          <li>思い出ばなし（回想法）の会話カード</li>
+          <li>大きな文字で出題する「みんなでレク」</li>
+          <li>施設向けに、1台を複数の利用者で使う設定もあります</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="howto">
+    <h2>スマホ・タブレットで「アプリ」として使うには</h2>
+    <p class="lead">ホーム画面にアイコンを置いておくと、次からは1回押すだけで開けます。アプリストアからのインストールは必要ありません。</p>
+
+    <h3>iPhone・iPad の場合</h3>
+    <div class="steps">
+      <div class="step"><span class="dot">1</span><span>Safari（サファリ）でこのページを開き、「脳いきいき手帳をひらく」を押します</span></div>
+      <div class="step"><span class="dot">2</span><span>画面の下にある「共有」ボタン（□に↑の絵）を押します</span></div>
+      <div class="step"><span class="dot">3</span><span>メニューを下へたどり、「ホーム画面に追加」を押します</span></div>
+    </div>
+
+    <h3>Android（アンドロイド）の場合</h3>
+    <div class="steps">
+      <div class="step"><span class="dot">1</span><span>Chrome（クローム）でこのページを開き、「脳いきいき手帳をひらく」を押します</span></div>
+      <div class="step"><span class="dot">2</span><span>右上の「⋮」（点が3つ）を押します</span></div>
+      <div class="step"><span class="dot">3</span><span>「ホーム画面に追加」を押します</span></div>
+    </div>
+
+    <h3>パソコンの場合</h3>
+    <div class="steps">
+      <div class="step"><span class="dot">1</span><span>「脳いきいき手帳をひらく」を押すだけで、そのままお使いいただけます</span></div>
+      <div class="step"><span class="dot">2</span><span>よく使う場合は、開いたページを「お気に入り」に入れておくと便利です</span></div>
+    </div>
+  </div>
+
+  <div class="note-card">
+    <h2>使う前に、知っておいていただきたいこと</h2>
+    <ul>
+      <li>このアプリは脳トレ・習慣づくりの<strong>補助</strong>が目的です。医療・診断・治療を目的とするものではありません。</li>
+      <li>記録は、お使いの端末の中だけに保存されます。こちらから中身を見ることはありません。</li>
+      <li>スマホとパソコンなど、端末がちがうと記録は共通になりません。</li>
+      <li>ブラウザの「閲覧データの削除」をすると、記録も消えますのでご注意ください。</li>
+      <li>一度開いておけば、電波のない場所でも使えます（オフライン対応）。</li>
+      <li>無料でお使いいただけます。今後も改良を続けていきます。</li>
+    </ul>
+  </div>
+
+  <div class="launch-card" style="margin-top:0;">
+    <h2>準備はいりません</h2>
+    <p>今日から、5分だけ。まずは1回、開いてみてください。</p>
+    <a class="launch-btn" href="../nouikiiki/" target="_blank" rel="noopener">脳いきいき手帳をひらく</a>
+  </div>
+
+</main>
+
+<footer class="closing">
+  <div class="emoji">🐈‍⬛</div>
+  <h2>使い方でお困りのときは</h2>
+  <p>「開き方がわからない」「家族の分も設定したい」など、遠慮なくご相談ください。</p>
+  <a class="back" href="../index.html#contact">お問い合わせページへ</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>脳いきいき手帳</title>
+<meta name="description" content="脳トレ・記録・家族との見守りを楽しく続ける手帳アプリ">
+<meta name="theme-color" content="#4F6E56">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="脳いきいき手帳">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF6EC;
+  --text: #2B3A55;
+  --main: #4F6E56;
+  --main-dark: #3D5744;
+  --gold: #D9A441;
+  --coral: #C97B63;
+  --white: #FFFFFF;
+  --line: #E3DCC8;
+  --done: #DFF0DC;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { font-size: 18px; }
+body {
+  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+h1, h2, h3, .maru { font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif; }
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.screen {
+  display: none;
+  flex: 1;
+  padding: 20px 16px calc(90px + env(safe-area-inset-bottom));
+}
+.screen.active { display: block; }
+
+/* ---------- 共通パーツ ---------- */
+.btn {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
+  cursor: pointer;
+  padding: 12px 16px;
+  color: var(--white);
+  background: var(--main);
+  box-shadow: 0 3px 0 var(--main-dark);
+  margin-bottom: 14px;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--main-dark); }
+.btn.gold { background: var(--gold); box-shadow: 0 3px 0 #B3842F; color: #FFF; }
+.btn.gold:active { box-shadow: 0 1px 0 #B3842F; }
+.btn.coral { background: var(--coral); box-shadow: 0 3px 0 #A65F4B; }
+.btn.coral:active { box-shadow: 0 1px 0 #A65F4B; }
+.btn.ghost {
+  background: var(--white);
+  color: var(--main);
+  border: 2px solid var(--main);
+  box-shadow: 0 3px 0 #C9C2AE;
+}
+.btn.ghost:active { box-shadow: 0 1px 0 #C9C2AE; }
+.btn.small { min-height: 48px; font-size: 1rem; }
+
+.card {
+  background: var(--white);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(43, 58, 85, 0.08);
+}
+.page-title {
+  font-size: 1.3rem;
+  color: var(--main);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.note { font-size: 0.85rem; color: #6B7691; }
+.center { text-align: center; }
+
+/* ---------- マスコット（黒猫クロ） ---------- */
+.mascot { display: flex; align-items: center; gap: 12px; }
+.mascot svg { flex-shrink: 0; }
+.bubble {
+  position: relative;
+  background: #FFF9E8;
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  flex: 1;
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 24px;
+  border: 6px solid transparent;
+  border-right-color: var(--gold);
+}
+
+/* ---------- ホーム ---------- */
+.greeting { font-size: 1.35rem; color: var(--main); margin-bottom: 2px; }
+.today-date { font-size: 1rem; margin-bottom: 16px; }
+.status-done {
+  background: var(--done);
+  border: 2px solid var(--main);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--main);
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+}
+.stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.stat {
+  flex: 1;
+  background: var(--white);
+  border-radius: 16px;
+  padding: 14px 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(43, 58, 85, 0.08);
+}
+.stat .num { font-size: 2rem; font-weight: 700; color: var(--gold); font-family: "Zen Maru Gothic", sans-serif; line-height: 1.2; }
+.stat .label { font-size: 0.85rem; }
+
+/* ---------- ゲーム ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.gcard {
+  aspect-ratio: 3 / 4;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.9rem;
+  cursor: pointer;
+  background: var(--main);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+  font-family: inherit;
+}
+.gcard.open { background: var(--white); border: 2px solid var(--main); }
+.gcard.matched { background: var(--done); border: 2px solid var(--gold); }
+.game-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-weight: 700; }
+
+/* ---------- パズルゲーム ---------- */
+.btn-sub { display: block; font-size: 0.8rem; font-weight: 500; opacity: 0.92; }
+.pboard-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--white);
+  border: 2px solid var(--line);
+  margin-bottom: 10px;
+}
+.pboard-ghost { position: absolute; inset: 0; background-size: 100% 100%; opacity: 0.25; }
+.pboard { position: absolute; inset: 0; display: grid; }
+.pslot {
+  border: 1.5px dashed rgba(79, 110, 86, 0.55);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  background-repeat: no-repeat;
+}
+.pslot.filled { border: none; cursor: default; }
+.pslot.wrong { animation: wiggle 0.4s; background-color: rgba(201, 123, 99, 0.25); }
+@keyframes wiggle {
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.puzzle-msg { font-size: 0.9rem; margin-bottom: 10px; min-height: 1.5em; font-weight: 700; color: var(--main); }
+.ptray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.ppiece {
+  width: 74px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-color: var(--white);
+}
+.ppiece.selected { outline: 4px solid var(--gold); outline-offset: 1px; }
+
+/* ---------- クイズ ---------- */
+.quiz-cat {
+  display: inline-block;
+  background: var(--main);
+  color: var(--white);
+  border-radius: 999px;
+  padding: 2px 16px;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.quiz-q { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; }
+.quiz-choice {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  border: 2px solid var(--main);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+.quiz-choice.correct { background: var(--done); border-color: var(--main); font-weight: 700; }
+.quiz-choice.wrong { background: #F6E3DE; border-color: var(--coral); }
+.quiz-choice:disabled { cursor: default; opacity: 1; }
+.quiz-result-mark { font-size: 1.6rem; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.quiz-result-mark.ok { color: var(--main); }
+.quiz-result-mark.ng { color: var(--coral); }
+
+/* ---------- カレンダー ---------- */
+.cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cal-head button {
+  min-width: 60px;
+  min-height: 48px;
+  border: 2px solid var(--main);
+  background: var(--white);
+  color: var(--main);
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cal-title { font-size: 1.2rem; font-weight: 700; color: var(--main); font-family: "Zen Maru Gothic", sans-serif; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { text-align: center; font-size: 0.8rem; font-weight: 700; padding: 4px 0; }
+.cal-dow.sun { color: var(--coral); }
+.cal-dow.sat { color: #5A7BB5; }
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: var(--white);
+}
+.cal-day.empty { background: transparent; }
+.cal-day.done { background: var(--main); color: var(--white); font-weight: 700; }
+.cal-day.today { border: 3px solid var(--gold); font-weight: 700; }
+
+/* ---------- 家族 ---------- */
+.family-input {
+  width: 100%;
+  min-height: 60px;
+  font-size: 1.1rem;
+  padding: 10px 14px;
+  border: 2px solid var(--coral);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  font-family: inherit;
+  background: var(--white);
+  color: var(--text);
+}
+.member {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(43, 58, 85, 0.08);
+}
+.member.me { border: 2px solid var(--coral); background: #FDF3F0; }
+.member .name { font-weight: 700; font-size: 1.05rem; }
+.member .info { font-size: 0.85rem; text-align: right; }
+
+/* ---------- ニックネーム設定 ---------- */
+#screen-setup { padding-top: 48px; }
+.setup-logo { text-align: center; margin-bottom: 20px; }
+.setup-logo h1 { color: var(--main); font-size: 1.6rem; margin-top: 8px; }
+
+/* ---------- 下部タブ ---------- */
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border-top: 2px solid var(--line);
+  display: none;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+.tabbar.visible { display: block; }
+.tabbar-inner { max-width: 480px; margin: 0 auto; display: flex; }
+.tab {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 8px 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8A93A8;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.3;
+}
+.tab .ico { font-size: 1.5rem; display: block; }
+.tab.active { color: var(--main); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== ニックネーム入力（初回） ===== -->
+  <section class="screen" id="screen-setup">
+    <div class="setup-logo">
+      <svg width="90" height="90" viewBox="0 0 100 100" aria-hidden="true">
+        <polygon points="22,38 30,10 45,30" fill="#2B2B2B"/>
+        <polygon points="78,38 70,10 55,30" fill="#2B2B2B"/>
+        <circle cx="50" cy="55" r="34" fill="#2B2B2B"/>
+        <circle cx="38" cy="50" r="5" fill="#D9A441"/>
+        <circle cx="62" cy="50" r="5" fill="#D9A441"/>
+        <polygon points="50,60 46,65 54,65" fill="#C97B63"/>
+        <path d="M44 70 Q50 75 56 70" stroke="#D9A441" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <line x1="18" y1="55" x2="32" y2="57" stroke="#2B2B2B" stroke-width="2"/>
+        <line x1="18" y1="63" x2="32" y2="62" stroke="#2B2B2B" stroke-width="2"/>
+        <line x1="82" y1="55" x2="68" y2="57" stroke="#2B2B2B" stroke-width="2"/>
+        <line x1="82" y1="63" x2="68" y2="62" stroke="#2B2B2B" stroke-width="2"/>
+      </svg>
+      <h1>脳いきいき手帳</h1>
+    </div>
+    <div class="card">
+      <p style="margin-bottom:12px;">はじめまして！黒猫の<strong>クロ</strong>です。<br>あなたのお名前（ニックネーム）を教えてくださいね。</p>
+      <input type="text" class="family-input" id="nickname-input" placeholder="例：はなこ" maxlength="10" style="border-color: var(--main);">
+      <button class="btn" id="setup-btn">はじめる</button>
+    </div>
+    <p class="note center">※このアプリは脳トレ・習慣づくりの補助アプリです。<br>医療・治療を目的とするものではありません。</p>
+  </section>
+
+  <!-- ===== ホーム ===== -->
+  <section class="screen" id="screen-home">
+    <h2 class="greeting" id="home-greeting"></h2>
+    <p class="today-date" id="home-date"></p>
+
+    <div class="card">
+      <div class="mascot">
+        <svg width="64" height="64" viewBox="0 0 100 100" aria-hidden="true">
+          <polygon points="22,38 30,10 45,30" fill="#2B2B2B"/>
+          <polygon points="78,38 70,10 55,30" fill="#2B2B2B"/>
+          <circle cx="50" cy="55" r="34" fill="#2B2B2B"/>
+          <circle cx="38" cy="50" r="5" fill="#D9A441"/>
+          <circle cx="62" cy="50" r="5" fill="#D9A441"/>
+          <polygon points="50,60 46,65 54,65" fill="#C97B63"/>
+          <path d="M44 70 Q50 75 56 70" stroke="#D9A441" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="bubble" id="mascot-message"></div>
+      </div>
+    </div>
+
+    <div id="home-todo">
+      <button class="btn" id="home-game-btn">🧩 ゲームであそぶ</button>
+      <button class="btn" id="home-quiz-btn">✏️ クイズにちょうせん</button>
+    </div>
+    <div id="home-done" class="status-done" style="display:none;">
+      🎉 今日の脳トレは完了しました！<br>おつかれさまでした。
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="num" id="home-streak">0</div><div class="label">連続日数</div></div>
+      <div class="stat"><div class="num" id="home-month">0</div><div class="label">今月の実施</div></div>
+    </div>
+
+    <button class="btn ghost" id="home-record-btn">📅 記録を見る</button>
+    <button class="btn coral" id="home-family-btn">👪 家族の様子を見る</button>
+  </section>
+
+  <!-- ===== ゲーム：メニュー ===== -->
+  <section class="screen" id="screen-game-menu">
+    <h2 class="page-title">🧩 今日のゲーム</h2>
+    <div class="card">
+      <p>あそぶゲームを選んでください。</p>
+    </div>
+    <button class="btn" id="menu-memory-btn">🃏 記憶力ゲーム<span class="btn-sub">同じ絵柄のカードを2枚ずつ見つける</span></button>
+    <button class="btn" id="menu-puzzle-btn">🧩 パズルゲーム<span class="btn-sub">ピースをえらんで絵を完成させる</span></button>
+  </section>
+
+  <!-- ===== ゲーム：難易度選択 ===== -->
+  <section class="screen" id="screen-game-select">
+    <h2 class="page-title">🧩 記憶力ゲーム</h2>
+    <div class="card">
+      <p style="margin-bottom:8px;">同じ絵柄のカードを2枚ずつ見つけましょう。むずかしさを選んでください。</p>
+    </div>
+    <button class="btn" data-difficulty="easy">かんたん（6ペア）</button>
+    <button class="btn" data-difficulty="normal">ふつう（8ペア）</button>
+    <button class="btn" data-difficulty="hard">むずかしい（10ペア）</button>
+  </section>
+
+  <!-- ===== ゲーム：プレイ ===== -->
+  <section class="screen" id="screen-game-play">
+    <div class="game-info">
+      <span id="game-difficulty-label"></span>
+      <span>手数：<span id="game-moves">0</span>回</span>
+    </div>
+    <div class="grid" id="game-grid"></div>
+    <button class="btn ghost small" id="game-quit-btn">やめてホームに戻る</button>
+  </section>
+
+  <!-- ===== ゲーム：クリア ===== -->
+  <section class="screen" id="screen-game-clear">
+    <h2 class="page-title">🎉 クリア！</h2>
+    <div class="card center">
+      <p style="font-size:1.15rem; font-weight:700; margin-bottom:8px;" id="game-clear-text"></p>
+      <p>今日の記録として保存しました。</p>
+    </div>
+    <button class="btn" id="game-again-btn">もう一回あそぶ</button>
+    <button class="btn ghost" id="game-home-btn">ホームに戻る</button>
+  </section>
+
+  <!-- ===== パズル：難易度選択 ===== -->
+  <section class="screen" id="screen-puzzle-select">
+    <h2 class="page-title">🧩 パズルゲーム</h2>
+    <div class="card">
+      <p style="margin-bottom:8px;">下のピース（絵のかけら）をタップしてえらび、上の枠の正しい場所をタップして絵を完成させましょう。むずかしさを選んでください。</p>
+    </div>
+    <button class="btn" data-puzzle-difficulty="easy">かんたん（6ピース）</button>
+    <button class="btn" data-puzzle-difficulty="normal">ふつう（9ピース）</button>
+    <button class="btn" data-puzzle-difficulty="hard">むずかしい（16ピース）</button>
+  </section>
+
+  <!-- ===== パズル：プレイ ===== -->
+  <section class="screen" id="screen-puzzle-play">
+    <div class="game-info">
+      <span id="puzzle-name-label"></span>
+      <span>手数：<span id="puzzle-moves">0</span>回</span>
+    </div>
+    <div class="pboard-wrap">
+      <div class="pboard-ghost" id="puzzle-ghost"></div>
+      <div class="pboard" id="puzzle-board"></div>
+    </div>
+    <p class="puzzle-msg" id="puzzle-msg" aria-live="polite"></p>
+    <div class="ptray" id="puzzle-tray"></div>
+    <button class="btn ghost small" id="puzzle-quit-btn">やめてホームに戻る</button>
+  </section>
+
+  <!-- ===== パズル：完成 ===== -->
+  <section class="screen" id="screen-puzzle-clear">
+    <h2 class="page-title">🎉 完成！</h2>
+    <div class="card center">
+      <p style="font-size:1.15rem; font-weight:700; margin-bottom:8px;" id="puzzle-clear-text"></p>
+      <p>今日の記録として保存しました。</p>
+    </div>
+    <button class="btn" id="puzzle-again-btn">もう一回あそぶ</button>
+    <button class="btn ghost" id="puzzle-home-btn">ホームに戻る</button>
+  </section>
+
+  <!-- ===== クイズ：開始 ===== -->
+  <section class="screen" id="screen-quiz-start">
+    <h2 class="page-title">✏️ 脳トレクイズ</h2>
+    <div class="card">
+      <p>計算・ことば・常識・思い出の中から<strong>5問</strong>出題します。</p>
+      <p class="note" style="margin-top:8px;">気楽にちょうせんしてくださいね。まちがえても大丈夫です！</p>
+    </div>
+    <button class="btn" id="quiz-start-btn">クイズをはじめる</button>
+  </section>
+
+  <!-- ===== クイズ：出題 ===== -->
+  <section class="screen" id="screen-quiz-question">
+    <p class="center" style="font-weight:700; margin-bottom:8px;" id="quiz-progress"></p>
+    <div class="card">
+      <span class="quiz-cat" id="quiz-category"></span>
+      <p class="quiz-q" id="quiz-question"></p>
+      <div id="quiz-choices"></div>
+      <div id="quiz-feedback" style="display:none;">
+        <p class="quiz-result-mark" id="quiz-mark"></p>
+        <button class="btn gold" id="quiz-next-btn">次へ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== クイズ：結果 ===== -->
+  <section class="screen" id="screen-quiz-result">
+    <h2 class="page-title">クイズの結果</h2>
+    <div class="card center">
+      <p style="font-size:1.8rem; font-weight:700; color:var(--gold); font-family:'Zen Maru Gothic',sans-serif;" id="quiz-score"></p>
+      <p id="quiz-comment" style="font-weight:700;"></p>
+      <p class="note" style="margin-top:8px;">今日の記録として保存しました。</p>
+    </div>
+    <button class="btn" id="quiz-again-btn">もう一回ちょうせん</button>
+    <button class="btn ghost" id="quiz-home-btn">ホームに戻る</button>
+  </section>
+
+  <!-- ===== 記録（カレンダー） ===== -->
+  <section class="screen" id="screen-calendar">
+    <h2 class="page-title">📅 記録カレンダー</h2>
+    <div class="stats-row">
+      <div class="stat"><div class="num" id="cal-streak">0</div><div class="label">連続日数</div></div>
+      <div class="stat"><div class="num" id="cal-month-count">0</div><div class="label">今月の実施</div></div>
+    </div>
+    <div class="card">
+      <div class="cal-head">
+        <button id="cal-prev" aria-label="前の月">◀</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button id="cal-next" aria-label="次の月">▶</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <p class="note" style="margin-top:10px;">緑色＝脳トレをした日／金色のわく＝今日</p>
+    </div>
+  </section>
+
+  <!-- ===== 家族 ===== -->
+  <section class="screen" id="screen-family">
+    <h2 class="page-title" style="color:var(--coral);">👪 家族と共有</h2>
+
+    <div id="family-join">
+      <div class="card">
+        <p style="margin-bottom:8px;">家族で決めた「<strong>合言葉（家族コード）</strong>」を入れると、おたがいの様子が見られるようになります。</p>
+        <input type="text" class="family-input" id="family-code-input" placeholder="例：やまだけ2026" maxlength="20">
+        <button class="btn coral" id="family-join-btn">グループに参加する</button>
+      </div>
+      <p class="note">※合言葉は家族だけがわかる言葉にしましょう。</p>
+    </div>
+
+    <div id="family-members" style="display:none;">
+      <div class="card">
+        <p style="margin-bottom:4px;">合言葉：<strong id="family-code-label"></strong></p>
+        <p class="note">同じ合言葉の家族の様子が表示されます。</p>
+      </div>
+      <div id="family-list"></div>
+      <button class="btn coral" id="family-refresh-btn">最新の状態にする</button>
+      <button class="btn ghost small" id="family-leave-btn">グループから抜ける</button>
+      <p class="note">※いまはお試し版のため、この端末の記録のみ表示されます。家族のスマホと本当につながる機能は今後の対応予定です。</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== 下部タブ ===== -->
+<nav class="tabbar" id="tabbar">
+  <div class="tabbar-inner">
+    <button class="tab" data-screen="home"><span class="ico">🏠</span>ホーム</button>
+    <button class="tab" data-screen="asobu"><span class="ico">🧠</span>脳トレ</button>
+    <button class="tab" data-screen="karada"><span class="ico">💪</span>からだ</button>
+    <button class="tab" data-screen="calendar"><span class="ico">📅</span>きろく</button>
+    <button class="tab" data-screen="minna"><span class="ico">👪</span>みんな</button>
+  </div>
+</nav>
+
+<script>
+"use strict";
+
+/* =========================================================
+   保存（localStorage を使用。使えない環境ではメモリ保存に切替）
+   ========================================================= */
+const storage = (() => {
+  const PREFIX = "nouikiiki:";
+  let mem = {};
+  let usable = false;
+  try {
+    localStorage.setItem(PREFIX + "__test__", "1");
+    localStorage.removeItem(PREFIX + "__test__");
+    usable = true;
+  } catch (e) { usable = false; }
+  return {
+    get(key) {
+      try {
+        const raw = usable ? localStorage.getItem(PREFIX + key) : (mem[key] ?? null);
+        return raw === null || raw === undefined ? null : JSON.parse(raw);
+      } catch (e) { return null; }
+    },
+    set(key, value) {
+      const raw = JSON.stringify(value);
+      if (usable) { try { localStorage.setItem(PREFIX + key, raw); } catch (e) {} }
+      else { mem[key] = raw; }
+    },
+    remove(key) {
+      if (usable) { try { localStorage.removeItem(PREFIX + key); } catch (e) {} }
+      else { delete mem[key]; }
+    }
+  };
+})();
+
+/* =========================================================
+   日付ユーティリティ
+   ========================================================= */
+function todayKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+const DOW = ["日", "月", "火", "水", "木", "金", "土"];
+
+/* =========================================================
+   データ取得・保存
+   ========================================================= */
+function getProfile() { return storage.get("profile"); }
+function getRecords() { return storage.get("records") || {}; }
+function saveRecords(records) { storage.set("records", records); }
+
+function markTodayCompleted(kind, data) {
+  const records = getRecords();
+  const key = todayKey();
+  const rec = records[key] || { completed: false };
+  rec.completed = true;
+  rec[kind] = data;
+  records[key] = rec;
+  saveRecords(records);
+  updateFamilySelf();
+}
+
+function calcStreak() {
+  const records = getRecords();
+  let streak = 0;
+  const d = new Date();
+  // 今日が未実施なら昨日から数える
+  if (!records[todayKey(d)]?.completed) d.setDate(d.getDate() - 1);
+  while (records[todayKey(d)]?.completed) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function calcMonthCount(year, month) {
+  const records = getRecords();
+  const prefix = `${year}-${String(month + 1).padStart(2, "0")}-`;
+  return Object.keys(records).filter(k => k.startsWith(prefix) && records[k].completed).length;
+}
+
+/* =========================================================
+   画面切り替え
+   ========================================================= */
+/* 追加モジュール（js/*.js）が画面を後から差し込めるように、
+   画面一覧は毎回引き直す。表示時のフックも登録できるようにする。 */
+const SCREEN_HOOKS = {};
+function onScreen(id, fn) {
+  (SCREEN_HOOKS[id] = SCREEN_HOOKS[id] || []).push(fn);
+}
+function tabKeyOf(id) {
+  if (/^(game|puzzle|quiz|calc|order|word|stroop|find)/.test(id)) return "asobu";
+  if (/^(karada|taiso|cogni|habit)/.test(id)) return "karada";
+  if (/^(minna|family|omoide|rec)/.test(id)) return "minna";
+  return id;
+}
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s =>
+    s.classList.toggle("active", s.id === "screen-" + id)
+  );
+  const tabKey = tabKeyOf(id);
+  document.querySelectorAll(".tab").forEach(t =>
+    t.classList.toggle("active", t.dataset.screen === tabKey)
+  );
+  window.scrollTo(0, 0);
+  if (id === "home") renderHome();
+  if (id === "calendar") renderCalendar();
+  if (id === "family") renderFamily();
+  (SCREEN_HOOKS[id] || []).forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
+}
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => showScreen(tab.dataset.screen));
+});
+
+/* =========================================================
+   初回セットアップ
+   ========================================================= */
+document.getElementById("setup-btn").addEventListener("click", () => {
+  const name = document.getElementById("nickname-input").value.trim();
+  if (!name) { alert("ニックネームを入れてくださいね。"); return; }
+  // v0.3：記録は「利用者」ごとに持つ（js/records.js）
+  if (typeof addUser === "function") {
+    const u = addUser(name);
+    setCurrentUser(u.id);
+  } else {
+    const memberId = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    storage.set("profile", { nickname: name, memberId });
+  }
+  document.getElementById("tabbar").classList.add("visible");
+  showScreen("home");
+});
+
+/* =========================================================
+   ホーム
+   ========================================================= */
+const MASCOT_MESSAGES = [
+  "今日も会えてうれしいにゃ！ゆっくりやっていこうね。",
+  "毎日ちょっとずつが一番の近道だにゃ。",
+  "焦らなくて大丈夫。あなたのペースでいいんだにゃ。",
+  "昨日のがんばり、ちゃんと覚えてるにゃ〜。",
+  "今日の脳トレ、いっしょに楽しむにゃ！",
+  "深呼吸してからやると調子がいいらしいにゃ。",
+  "続けているあなたは本当にすごいにゃ！",
+  "むずかしい日は、かんたんコースでいいんだにゃ。",
+  "終わったら好きなお茶でひと休みするにゃ〜。",
+  "家族のみんなも、あなたの元気を喜んでるにゃ。"
+];
+
+function renderHome() {
+  const profile = getProfile();
+  if (!profile) return;
+  const now = new Date();
+  document.getElementById("home-greeting").textContent = `こんにちは、${profile.nickname}さん`;
+  document.getElementById("home-date").textContent =
+    `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${DOW[now.getDay()]}）`;
+
+  // 日替わりメッセージ（日付でローテーション）
+  const dayNumber = Math.floor(now.getTime() / 86400000);
+  document.getElementById("mascot-message").textContent =
+    MASCOT_MESSAGES[dayNumber % MASCOT_MESSAGES.length];
+
+  const doneToday = !!getRecords()[todayKey()]?.completed;
+  document.getElementById("home-todo").style.display = doneToday ? "none" : "block";
+  document.getElementById("home-done").style.display = doneToday ? "block" : "none";
+
+  document.getElementById("home-streak").textContent = calcStreak();
+  document.getElementById("home-month").textContent = calcMonthCount(now.getFullYear(), now.getMonth());
+}
+
+document.getElementById("home-game-btn").addEventListener("click", () => showScreen("game-menu"));
+document.getElementById("home-quiz-btn").addEventListener("click", () => showScreen("quiz-start"));
+document.getElementById("home-record-btn").addEventListener("click", () => showScreen("calendar"));
+document.getElementById("home-family-btn").addEventListener("click", () => showScreen("family"));
+
+/* =========================================================
+   記憶力ゲーム（神経衰弱）
+   ========================================================= */
+const GAME_EMOJIS = ["🍎", "🍊", "🍇", "🍑", "🍙", "🌸", "🌻", "🌷", "🐱", "🐟"];
+const DIFFICULTY = {
+  easy:   { pairs: 6,  label: "かんたん" },
+  normal: { pairs: 8,  label: "ふつう" },
+  hard:   { pairs: 10, label: "むずかしい" }
+};
+let game = null;
+
+document.querySelectorAll("#screen-game-select [data-difficulty]").forEach(btn => {
+  btn.addEventListener("click", () => startGame(btn.dataset.difficulty));
+});
+
+function startGame(difficulty) {
+  const { pairs, label } = DIFFICULTY[difficulty];
+  const emojis = GAME_EMOJIS.slice(0, pairs);
+  const deck = [...emojis, ...emojis];
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  game = { difficulty, deck, open: [], matched: new Set(), moves: 0, locked: false };
+
+  document.getElementById("game-difficulty-label").textContent = label;
+  document.getElementById("game-moves").textContent = "0";
+
+  const grid = document.getElementById("game-grid");
+  grid.innerHTML = "";
+  deck.forEach((emoji, i) => {
+    const card = document.createElement("button");
+    card.className = "gcard";
+    card.dataset.index = i;
+    card.textContent = "？";
+    card.setAttribute("aria-label", "カード");
+    card.addEventListener("click", () => flipCard(i, card));
+    grid.appendChild(card);
+  });
+  showScreen("game-play");
+}
+
+function flipCard(index, cardEl) {
+  if (!game || game.locked) return;
+  if (game.matched.has(index) || game.open.some(o => o.index === index)) return;
+
+  game.moves++;
+  document.getElementById("game-moves").textContent = game.moves;
+  cardEl.textContent = game.deck[index];
+  cardEl.classList.add("open");
+  game.open.push({ index, el: cardEl });
+
+  if (game.open.length === 2) {
+    const [a, b] = game.open;
+    if (game.deck[a.index] === game.deck[b.index]) {
+      game.matched.add(a.index);
+      game.matched.add(b.index);
+      a.el.classList.add("matched");
+      b.el.classList.add("matched");
+      game.open = [];
+      if (game.matched.size === game.deck.length) finishGame();
+    } else {
+      game.locked = true;
+      setTimeout(() => {
+        [a, b].forEach(o => { o.el.textContent = "？"; o.el.classList.remove("open"); });
+        game.open = [];
+        game.locked = false;
+      }, 700);
+    }
+  }
+}
+
+function finishGame() {
+  const { label } = DIFFICULTY[game.difficulty];
+  markTodayCompleted("game", { difficulty: game.difficulty, moves: game.moves });
+  document.getElementById("game-clear-text").textContent =
+    `${label}コースを ${game.moves}手 でクリア！すばらしい！`;
+  setTimeout(() => showScreen("game-clear"), 500);
+}
+
+document.getElementById("game-quit-btn").addEventListener("click", () => showScreen("home"));
+document.getElementById("game-again-btn").addEventListener("click", () => showScreen("game-select"));
+document.getElementById("game-home-btn").addEventListener("click", () => showScreen("home"));
+
+/* =========================================================
+   パズルゲーム（ジグソー風：ピースをえらんで置く）
+   ========================================================= */
+const PUZZLE_PICTURES = [
+  {
+    name: "ふじさん",
+    svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'><rect width='300' height='300' fill='#AEDCF0'/><circle cx='245' cy='55' r='30' fill='#E8613C'/><path d='M0 300 L150 70 L300 300 Z' fill='#4A6FA5'/><path d='M150 70 L112 132 C126 118 138 142 150 126 C162 142 174 118 188 132 Z' fill='#FFFFFF'/><rect y='248' width='300' height='52' fill='#7DBB6C'/><ellipse cx='60' cy='90' rx='34' ry='14' fill='#FFFFFF'/><ellipse cx='95' cy='100' rx='26' ry='11' fill='#FFFFFF'/></svg>"
+  },
+  {
+    name: "ひまわり",
+    svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'><rect width='300' height='300' fill='#BDE3F5'/><rect x='142' y='170' width='16' height='130' fill='#4F8A3D'/><ellipse cx='113' cy='230' rx='30' ry='14' fill='#5FA04C' transform='rotate(-25 113 230)'/><ellipse cx='187' cy='255' rx='30' ry='14' fill='#5FA04C' transform='rotate(25 187 255)'/><g fill='#F2C230'><ellipse cx='150' cy='75' rx='20' ry='38'/><ellipse cx='150' cy='185' rx='20' ry='38'/><ellipse cx='95' cy='130' rx='38' ry='20'/><ellipse cx='205' cy='130' rx='38' ry='20'/><ellipse cx='111' cy='91' rx='20' ry='36' transform='rotate(-45 111 91)'/><ellipse cx='189' cy='91' rx='20' ry='36' transform='rotate(45 189 91)'/><ellipse cx='111' cy='169' rx='20' ry='36' transform='rotate(45 111 169)'/><ellipse cx='189' cy='169' rx='20' ry='36' transform='rotate(-45 189 169)'/></g><circle cx='150' cy='130' r='40' fill='#8B5E34'/></svg>"
+  },
+  {
+    name: "くろねこ",
+    svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'><rect width='300' height='300' fill='#FAF6EC'/><polygon points='66,126 90,30 135,90' fill='#2B2B2B'/><polygon points='234,126 210,30 165,90' fill='#2B2B2B'/><circle cx='150' cy='165' r='102' fill='#2B2B2B'/><circle cx='114' cy='150' r='16' fill='#D9A441'/><circle cx='186' cy='150' r='16' fill='#D9A441'/><polygon points='150,180 138,195 162,195' fill='#C97B63'/><path d='M132 210 Q150 225 168 210' stroke='#D9A441' stroke-width='8' fill='none' stroke-linecap='round'/></svg>"
+  },
+  {
+    name: "きんぎょ",
+    svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'><rect width='300' height='300' fill='#A8D8E8'/><circle cx='50' cy='60' r='12' fill='#DFF2FA'/><circle cx='80' cy='35' r='8' fill='#DFF2FA'/><circle cx='250' cy='240' r='10' fill='#DFF2FA'/><path d='M205 150 L275 100 L258 150 L275 200 Z' fill='#E8613C'/><ellipse cx='140' cy='150' rx='80' ry='55' fill='#EE7A50'/><path d='M110 95 Q140 60 165 98 Q138 108 110 95 Z' fill='#E8613C'/><circle cx='85' cy='138' r='14' fill='#FFFFFF'/><circle cx='81' cy='138' r='7' fill='#2B2B2B'/><path d='M130 205 Q150 235 175 202 Q152 195 130 205 Z' fill='#E8613C'/></svg>"
+  }
+].map(p => ({ name: p.name, url: "data:image/svg+xml," + encodeURIComponent(p.svg) }));
+
+const PUZZLE_DIFFICULTY = {
+  easy:   { cols: 3, rows: 2, label: "かんたん" },
+  normal: { cols: 3, rows: 3, label: "ふつう" },
+  hard:   { cols: 4, rows: 4, label: "むずかしい" }
+};
+let puzzle = null;
+let puzzlePicIndex = Math.floor(Math.random() * PUZZLE_PICTURES.length);
+
+function sliceStyle(el, url, cols, rows, index) {
+  const c = index % cols;
+  const r = Math.floor(index / cols);
+  el.style.backgroundImage = `url("${url}")`;
+  el.style.backgroundSize = `${cols * 100}% ${rows * 100}%`;
+  const px = cols > 1 ? (c / (cols - 1)) * 100 : 0;
+  const py = rows > 1 ? (r / (rows - 1)) * 100 : 0;
+  el.style.backgroundPosition = `${px}% ${py}%`;
+}
+
+document.querySelectorAll("#screen-puzzle-select [data-puzzle-difficulty]").forEach(btn => {
+  btn.addEventListener("click", () => startPuzzle(btn.dataset.puzzleDifficulty));
+});
+
+function startPuzzle(difficulty) {
+  const { cols, rows, label } = PUZZLE_DIFFICULTY[difficulty];
+  const picture = PUZZLE_PICTURES[puzzlePicIndex % PUZZLE_PICTURES.length];
+  puzzlePicIndex++; // 次回は別の絵に
+  const total = cols * rows;
+  puzzle = { difficulty, cols, rows, picture, total, placed: 0, moves: 0, selected: null };
+
+  document.getElementById("puzzle-name-label").textContent = `「${picture.name}」（${label}）`;
+  document.getElementById("puzzle-moves").textContent = "0";
+  setPuzzleMsg("したのピースをタップしてえらんでね。");
+
+  // 下絵（うっすら見えるお手本）
+  document.getElementById("puzzle-ghost").style.backgroundImage = `url("${picture.url}")`;
+
+  // 枠（置く場所）
+  const board = document.getElementById("puzzle-board");
+  board.innerHTML = "";
+  board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  for (let i = 0; i < total; i++) {
+    const slot = document.createElement("button");
+    slot.className = "pslot";
+    slot.dataset.index = i;
+    slot.setAttribute("aria-label", `おく場所 ${i + 1}`);
+    slot.addEventListener("click", () => onSlotTap(i, slot));
+    board.appendChild(slot);
+  }
+
+  // ピース置き場（シャッフル）
+  const order = Array.from({ length: total }, (_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  const tray = document.getElementById("puzzle-tray");
+  tray.innerHTML = "";
+  order.forEach(idx => {
+    const piece = document.createElement("button");
+    piece.className = "ppiece";
+    piece.dataset.correct = idx;
+    piece.style.aspectRatio = `${rows} / ${cols}`;
+    sliceStyle(piece, picture.url, cols, rows, idx);
+    piece.setAttribute("aria-label", "パズルのピース");
+    piece.addEventListener("click", () => {
+      document.querySelectorAll(".ppiece.selected").forEach(p => p.classList.remove("selected"));
+      piece.classList.add("selected");
+      puzzle.selected = piece;
+      setPuzzleMsg("上の枠の、この絵が入りそうな場所をタップ！");
+    });
+    tray.appendChild(piece);
+  });
+  showScreen("puzzle-play");
+}
+
+function setPuzzleMsg(text) {
+  document.getElementById("puzzle-msg").textContent = text;
+}
+
+function onSlotTap(index, slotEl) {
+  if (!puzzle || slotEl.classList.contains("filled")) return;
+  if (!puzzle.selected) {
+    setPuzzleMsg("まず、したのピースをタップしてえらんでね。");
+    return;
+  }
+  puzzle.moves++;
+  document.getElementById("puzzle-moves").textContent = puzzle.moves;
+
+  if (Number(puzzle.selected.dataset.correct) === index) {
+    // 正しい場所：ピースをはめる
+    sliceStyle(slotEl, puzzle.picture.url, puzzle.cols, puzzle.rows, index);
+    slotEl.classList.add("filled");
+    puzzle.selected.remove();
+    puzzle.selected = null;
+    puzzle.placed++;
+    if (puzzle.placed === puzzle.total) {
+      finishPuzzle();
+    } else {
+      setPuzzleMsg("ぴったり！その調子！");
+    }
+  } else {
+    slotEl.classList.remove("wrong");
+    void slotEl.offsetWidth; // アニメーションをやり直すための再描画
+    slotEl.classList.add("wrong");
+    setPuzzleMsg("そこではないみたい。もういちど場所をさがしてみて！");
+  }
+}
+
+function finishPuzzle() {
+  const { label } = PUZZLE_DIFFICULTY[puzzle.difficulty];
+  markTodayCompleted("puzzle", { difficulty: puzzle.difficulty, moves: puzzle.moves, picture: puzzle.picture.name });
+  document.getElementById("puzzle-clear-text").textContent =
+    `「${puzzle.picture.name}」（${label}・${puzzle.total}ピース）を ${puzzle.moves}手 で完成！おみごと！`;
+  setPuzzleMsg("");
+  setTimeout(() => showScreen("puzzle-clear"), 600);
+}
+
+document.getElementById("menu-memory-btn").addEventListener("click", () => showScreen("game-select"));
+document.getElementById("menu-puzzle-btn").addEventListener("click", () => showScreen("puzzle-select"));
+document.getElementById("puzzle-quit-btn").addEventListener("click", () => showScreen("home"));
+document.getElementById("puzzle-again-btn").addEventListener("click", () => showScreen("puzzle-select"));
+document.getElementById("puzzle-home-btn").addEventListener("click", () => showScreen("home"));
+
+/* =========================================================
+   クイズ（計算・ことば・常識・思い出 各6問 = 24問）
+   ========================================================= */
+const QUIZ_BANK = [
+  // 計算
+  { cat: "計算", q: "25 ＋ 17 は いくつでしょう？", choices: ["32", "42", "52"], answer: 1 },
+  { cat: "計算", q: "80 － 36 は いくつでしょう？", choices: ["44", "54", "46"], answer: 0 },
+  { cat: "計算", q: "7 × 8 は いくつでしょう？", choices: ["54", "56", "63"], answer: 1 },
+  { cat: "計算", q: "100 － 45 は いくつでしょう？", choices: ["45", "65", "55"], answer: 2 },
+  { cat: "計算", q: "12 ＋ 39 は いくつでしょう？", choices: ["51", "41", "52"], answer: 0 },
+  { cat: "計算", q: "63 ÷ 9 は いくつでしょう？", choices: ["6", "7", "8"], answer: 1 },
+  // ことば
+  { cat: "ことば", q: "ことわざ「猫に◯◯」。◯◯に入るのは？", choices: ["小判", "こたつ", "かつおぶし"], answer: 0 },
+  { cat: "ことば", q: "「花より◯◯」。◯◯に入るのは？", choices: ["おちゃ", "だんご", "けしき"], answer: 1 },
+  { cat: "ことば", q: "「石の上にも◯年」。◯に入る数字は？", choices: ["一", "三", "十"], answer: 1 },
+  { cat: "ことば", q: "「善は◯◯」。◯◯に入るのは？", choices: ["急げ", "待て", "回れ"], answer: 0 },
+  { cat: "ことば", q: "「明るい」の反対のことばは？", choices: ["せまい", "暗い", "重い"], answer: 1 },
+  { cat: "ことば", q: "「早起きは◯文の徳」。◯に入るのは？", choices: ["一", "二", "三"], answer: 2 },
+  // 常識
+  { cat: "常識", q: "一年で一番昼が長い日を何という？", choices: ["冬至", "夏至", "彼岸"], answer: 1 },
+  { cat: "常識", q: "お正月に玄関に飾るものは？", choices: ["こいのぼり", "門松", "ひな人形"], answer: 1 },
+  { cat: "常識", q: "富士山がまたがる県は、静岡県とどこ？", choices: ["山梨県", "長野県", "神奈川県"], answer: 0 },
+  { cat: "常識", q: "敬老の日があるのは何月？", choices: ["5月", "9月", "11月"], answer: 1 },
+  { cat: "常識", q: "七夕は何月何日？", choices: ["7月7日", "8月8日", "9月9日"], answer: 0 },
+  { cat: "常識", q: "一週間は何日？", choices: ["5日", "6日", "7日"], answer: 2 },
+  // 思い出
+  { cat: "思い出", q: "昭和39年（1964年）に東京で開かれた大きな大会は？", choices: ["万国博覧会", "オリンピック", "花の博覧会"], answer: 1 },
+  { cat: "思い出", q: "「上を向いて歩こう」を歌った歌手は？", choices: ["坂本九", "美空ひばり", "石原裕次郎"], answer: 0 },
+  { cat: "思い出", q: "昭和の「三種の神器」はテレビ・洗濯機と、あと一つは？", choices: ["自動車", "冷蔵庫", "電話"], answer: 1 },
+  { cat: "思い出", q: "力道山が活躍したスポーツは？", choices: ["すもう", "野球", "プロレス"], answer: 2 },
+  { cat: "思い出", q: "昭和47年（1972年）に中国から日本へ来て大人気になった動物は？", choices: ["コアラ", "パンダ", "ラッコ"], answer: 1 },
+  { cat: "思い出", q: "「鉄腕アトム」を描いた漫画家は？", choices: ["手塚治虫", "長谷川町子", "藤子不二雄"], answer: 0 }
+];
+
+let quiz = null;
+
+document.getElementById("quiz-start-btn").addEventListener("click", startQuiz);
+document.getElementById("quiz-again-btn").addEventListener("click", startQuiz);
+document.getElementById("quiz-home-btn").addEventListener("click", () => showScreen("home"));
+
+function startQuiz() {
+  const shuffled = [...QUIZ_BANK];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  quiz = { questions: shuffled.slice(0, 5), current: 0, score: 0 };
+  showQuestion();
+  showScreen("quiz-question");
+}
+
+function showQuestion() {
+  const q = quiz.questions[quiz.current];
+  document.getElementById("quiz-progress").textContent = `第${quiz.current + 1}問 ／ 全${quiz.questions.length}問`;
+  document.getElementById("quiz-category").textContent = q.cat;
+  document.getElementById("quiz-question").textContent = q.q;
+  document.getElementById("quiz-feedback").style.display = "none";
+
+  const box = document.getElementById("quiz-choices");
+  box.innerHTML = "";
+  q.choices.forEach((choice, i) => {
+    const btn = document.createElement("button");
+    btn.className = "quiz-choice";
+    btn.textContent = choice;
+    btn.addEventListener("click", () => answerQuestion(i, btn));
+    box.appendChild(btn);
+  });
+}
+
+function answerQuestion(chosen, btnEl) {
+  const q = quiz.questions[quiz.current];
+  const buttons = document.querySelectorAll("#quiz-choices .quiz-choice");
+  buttons.forEach(b => b.disabled = true);
+  buttons[q.answer].classList.add("correct");
+
+  const mark = document.getElementById("quiz-mark");
+  if (chosen === q.answer) {
+    quiz.score++;
+    mark.textContent = "⭕ 正解！";
+    mark.className = "quiz-result-mark ok";
+  } else {
+    btnEl.classList.add("wrong");
+    mark.textContent = `❌ ざんねん… 正解は「${q.choices[q.answer]}」`;
+    mark.className = "quiz-result-mark ng";
+  }
+  document.getElementById("quiz-feedback").style.display = "block";
+}
+
+document.getElementById("quiz-next-btn").addEventListener("click", () => {
+  quiz.current++;
+  if (quiz.current < quiz.questions.length) {
+    showQuestion();
+  } else {
+    finishQuiz();
+  }
+});
+
+function finishQuiz() {
+  const total = quiz.questions.length;
+  markTodayCompleted("quiz", { score: quiz.score, total });
+  document.getElementById("quiz-score").textContent = `${quiz.score}問正解 ／ ${total}問中`;
+  const comments = [
+    "また明日いっしょにがんばりましょう！",
+    "その調子です！",
+    "いい調子ですね！",
+    "すばらしい！",
+    "とてもすばらしい！",
+    "全問正解！おみごとです！！"
+  ];
+  document.getElementById("quiz-comment").textContent = comments[quiz.score];
+  showScreen("quiz-result");
+}
+
+/* =========================================================
+   記録カレンダー
+   ========================================================= */
+let calDate = new Date();
+
+document.getElementById("cal-prev").addEventListener("click", () => {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() - 1, 1);
+  renderCalendar();
+});
+document.getElementById("cal-next").addEventListener("click", () => {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() + 1, 1);
+  renderCalendar();
+});
+
+function renderCalendar() {
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const records = getRecords();
+  const today = todayKey();
+
+  document.getElementById("cal-title").textContent = `${year}年${month + 1}月`;
+  document.getElementById("cal-streak").textContent = calcStreak();
+  const now = new Date();
+  document.getElementById("cal-month-count").textContent = calcMonthCount(year, month);
+
+  const grid = document.getElementById("cal-grid");
+  grid.innerHTML = "";
+  DOW.forEach((d, i) => {
+    const el = document.createElement("div");
+    el.className = "cal-dow" + (i === 0 ? " sun" : i === 6 ? " sat" : "");
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let i = 0; i < firstDow; i++) {
+    const el = document.createElement("div");
+    el.className = "cal-day empty";
+    grid.appendChild(el);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const el = document.createElement("div");
+    el.className = "cal-day";
+    if (records[key]?.completed) el.classList.add("done");
+    if (key === today) el.classList.add("today");
+    el.textContent = day;
+    grid.appendChild(el);
+  }
+}
+
+/* =========================================================
+   家族と共有（端末内デモ版）
+   ========================================================= */
+function getFamilyCode() { return storage.get("familyCode"); }
+
+function updateFamilySelf() {
+  const code = getFamilyCode();
+  const profile = getProfile();
+  if (!code || !profile) return;
+  const key = `family:${code}:members`;
+  const members = storage.get(key) || {};
+  members[profile.memberId] = {
+    nickname: profile.nickname,
+    streak: calcStreak(),
+    lastActive: todayKey()
+  };
+  storage.set(key, members);
+}
+
+function renderFamily() {
+  const code = getFamilyCode();
+  document.getElementById("family-join").style.display = code ? "none" : "block";
+  document.getElementById("family-members").style.display = code ? "block" : "none";
+  if (!code) return;
+
+  updateFamilySelf();
+  document.getElementById("family-code-label").textContent = code;
+
+  const members = storage.get(`family:${code}:members`) || {};
+  const profile = getProfile();
+  const list = document.getElementById("family-list");
+  list.innerHTML = "";
+  Object.entries(members).forEach(([id, m]) => {
+    const row = document.createElement("div");
+    row.className = "member" + (id === profile.memberId ? " me" : "");
+    row.innerHTML = `
+      <span class="name">${escapeHtml(m.nickname)}${id === profile.memberId ? "（あなた）" : ""}</span>
+      <span class="info">連続 <strong>${m.streak}</strong> 日<br>最終記録：${m.lastActive || "なし"}</span>`;
+    list.appendChild(row);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+document.getElementById("family-join-btn").addEventListener("click", () => {
+  const code = document.getElementById("family-code-input").value.trim();
+  if (!code) { alert("合言葉を入れてくださいね。"); return; }
+  storage.set("familyCode", code);
+  renderFamily();
+});
+
+document.getElementById("family-refresh-btn").addEventListener("click", renderFamily);
+
+document.getElementById("family-leave-btn").addEventListener("click", () => {
+  if (confirm("グループから抜けますか？\n（記録そのものは消えません）")) {
+    storage.remove("familyCode");
+    renderFamily();
+  }
+});
+
+/* =========================================================
+   起動
+   ========================================================= */
+(function init() {
+  if (getProfile()) {
+    document.getElementById("tabbar").classList.add("visible");
+    showScreen("home");
+  } else {
+    showScreen("setup");
+  }
+})();
+
+/* サービスワーカー登録（オフライン対応） */
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+
+<!-- ===== 追加モジュール（v0.3） ===== -->
+<!-- ?v= はアプリを更新したときに必ず新しいファイルを読ませるための番号。
+     JSを直したら、この番号も一緒に上げること（sw.js の CACHE_NAME と APP_SHELL も同じ番号に） -->
+<script src="js/records.js?v=0.3.5"></script>
+<script src="js/plus-core.js?v=0.3.5"></script>
+<script src="js/games-plus.js?v=0.3.5"></script>
+<script src="js/karada.js?v=0.3.5"></script>
+<script src="js/minna.js?v=0.3.5"></script>
+<script src="js/boot-plus.js?v=0.3.5"></script>
+<script src="js/shisetsu.js?v=0.3.5"></script>
+</body>
+</html>
