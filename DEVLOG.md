@@ -31,8 +31,9 @@
   **横にはみ出す**（`scrollWidth` 436px）。原因はヘッダーのロゴ画像が `height:84px; width:auto` で
   372px あり、ハンバーガーボタンと並ぶと入りきらないため。変更前のファイルでも同じ。
 
+- **GitHub に push して公開した**（コミット `d23e525`、Pages ビルド success）
+
 ### 次にやること
-- GitHub に push して公開（ロイさんの確認待ち）
 - ヘッダーロゴの横はみ出しを直す（スマホでは少し小さくする）
 - アプリを更新したときは `dev/tool/nouikiiki-app/サイトへ反映.bat` を実行 → その後 push
 
@@ -41,4 +42,7 @@
   - `/nouikiiki/` … JSエラー0件、サービスワーカーの scope は `/nouikiiki/`、manifest も解決OK
   - `/material/nouikiiki-tebo.html` … 画像6枚すべて表示、幅390pxでもはみ出しなし、起動ボタン 289×71px
   - `/index.html` … 紹介カードが教材カードの下に横いっぱいで表示、リンク先 `material/nouikiiki-tebo.html` OK
-- 未確認：本番（GitHub Pages）での表示。まだ push していないため
+- 本番（https://roys1105.github.io/roys-senior-it/ ）でも確認
+  - トップの紹介カード … 画像2枚とも表示、リンク先OK、ナビに「脳トレアプリ」あり
+  - `/nouikiiki/` … 起動OK、JSエラー0件、サービスワーカー scope `/roys-senior-it/nouikiiki/`
+  - 主要URLはすべて HTTP 200（紹介ページ・アプリ・js・画像・manifest）
