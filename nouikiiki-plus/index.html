@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>脳いきいき手帳</title>
+<title>脳いきいき手帳 プラス</title>
 <meta name="description" content="脳トレ・記録・家族との見守りを楽しく続ける手帳アプリ">
 <meta name="theme-color" content="#4F6E56">
 <link rel="manifest" href="manifest.webmanifest">
@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="脳いきいき手帳">
+<meta name="apple-mobile-web-app-title" content="いきいきプラス">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -355,7 +355,7 @@ h1, h2, h3, .maru { font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif; 
   <section class="screen" id="screen-setup">
     <div class="setup-logo">
       <img class="kuro" src="kuro.png" width="120" height="105" alt="黒猫のクロ">
-      <h1>脳いきいき手帳</h1>
+      <h1>脳いきいき手帳 プラス</h1>
     </div>
     <div class="card">
       <p style="margin-bottom:12px;">はじめまして！黒猫の<strong>クロ</strong>です。<br>あなたのお名前（ニックネーム）を教えてくださいね。</p>
@@ -392,17 +392,6 @@ h1, h2, h3, .maru { font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif; 
 
     <button class="btn ghost" id="home-record-btn">📅 記録を見る</button>
     <button class="btn coral" id="home-family-btn">👪 家族の様子を見る</button>
-
-    <!-- プラス版のご案内（無料版だけに入れている） -->
-    <div class="card" style="margin-top:22px;">
-      <p style="margin-bottom:10px;">脳トレをもっと増やしたい方、からだの体操や
-        記録の書き出しも使いたい方には、<strong>プラス版</strong>があります。</p>
-      <a class="btn ghost" href="../material/nouikiiki-tebo.html#plus"
-         style="display:block; text-align:center; text-decoration:none; margin-bottom:0;">
-        ✨ プラス版を見てみる
-      </a>
-      <p class="note" style="margin-top:10px;">いまの記録は、そのまま引き継がれます。</p>
-    </div>
   </section>
 
   <!-- ===== ゲーム：メニュー ===== -->
@@ -569,10 +558,10 @@ h1, h2, h3, .maru { font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif; 
 <nav class="tabbar" id="tabbar">
   <div class="tabbar-inner">
     <button class="tab" data-screen="home"><span class="ico">🏠</span>ホーム</button>
-    <button class="tab" data-screen="game"><span class="ico">🧩</span>ゲーム</button>
-    <button class="tab" data-screen="quiz"><span class="ico">✏️</span>クイズ</button>
-    <button class="tab" data-screen="calendar"><span class="ico">📅</span>記録</button>
-    <button class="tab" data-screen="family"><span class="ico">👪</span>家族</button>
+    <button class="tab" data-screen="asobu"><span class="ico">🧠</span>脳トレ</button>
+    <button class="tab" data-screen="karada"><span class="ico">💪</span>からだ</button>
+    <button class="tab" data-screen="calendar"><span class="ico">📅</span>きろく</button>
+    <button class="tab" data-screen="minna"><span class="ico">👪</span>みんな</button>
   </div>
 </nav>
 
@@ -661,10 +650,23 @@ function calcMonthCount(year, month) {
 /* =========================================================
    画面切り替え
    ========================================================= */
-const screens = document.querySelectorAll(".screen");
+/* 追加モジュール（js/*.js）が画面を後から差し込めるように、
+   画面一覧は毎回引き直す。表示時のフックも登録できるようにする。 */
+const SCREEN_HOOKS = {};
+function onScreen(id, fn) {
+  (SCREEN_HOOKS[id] = SCREEN_HOOKS[id] || []).push(fn);
+}
+function tabKeyOf(id) {
+  if (/^(game|puzzle|quiz|calc|order|word|stroop|find)/.test(id)) return "asobu";
+  if (/^(karada|taiso|cogni|habit)/.test(id)) return "karada";
+  if (/^(minna|family|omoide|rec)/.test(id)) return "minna";
+  return id;
+}
 function showScreen(id) {
-  screens.forEach(s => s.classList.toggle("active", s.id === "screen-" + id));
-  const tabKey = (id.startsWith("game") || id.startsWith("puzzle")) ? "game" : id.startsWith("quiz") ? "quiz" : id;
+  document.querySelectorAll(".screen").forEach(s =>
+    s.classList.toggle("active", s.id === "screen-" + id)
+  );
+  const tabKey = tabKeyOf(id);
   document.querySelectorAll(".tab").forEach(t =>
     t.classList.toggle("active", t.dataset.screen === tabKey)
   );
@@ -672,15 +674,11 @@ function showScreen(id) {
   if (id === "home") renderHome();
   if (id === "calendar") renderCalendar();
   if (id === "family") renderFamily();
+  (SCREEN_HOOKS[id] || []).forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
 }
 
 document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    const s = tab.dataset.screen;
-    if (s === "game") showScreen("game-menu");
-    else if (s === "quiz") showScreen("quiz-start");
-    else showScreen(s);
-  });
+  tab.addEventListener("click", () => showScreen(tab.dataset.screen));
 });
 
 /* =========================================================
@@ -689,8 +687,14 @@ document.querySelectorAll(".tab").forEach(tab => {
 document.getElementById("setup-btn").addEventListener("click", () => {
   const name = document.getElementById("nickname-input").value.trim();
   if (!name) { alert("ニックネームを入れてくださいね。"); return; }
-  const memberId = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  storage.set("profile", { nickname: name, memberId });
+  // v0.3：記録は「利用者」ごとに持つ（js/records.js）
+  if (typeof addUser === "function") {
+    const u = addUser(name);
+    setCurrentUser(u.id);
+  } else {
+    const memberId = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    storage.set("profile", { nickname: name, memberId });
+  }
   document.getElementById("tabbar").classList.add("visible");
   showScreen("home");
 });
@@ -1214,5 +1218,17 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
   });
 }
 </script>
+
+<!-- ===== 追加モジュール（v0.3） ===== -->
+<!-- ?v= はアプリを更新したときに必ず新しいファイルを読ませるための番号。
+     JSを直したら、この番号も一緒に上げること（sw.js の CACHE_NAME と APP_SHELL も同じ番号に） -->
+<script src="js/gate.js?v=0.3.7"></script>
+<script src="js/records.js?v=0.3.7"></script>
+<script src="js/plus-core.js?v=0.3.7"></script>
+<script src="js/games-plus.js?v=0.3.7"></script>
+<script src="js/karada.js?v=0.3.7"></script>
+<script src="js/minna.js?v=0.3.7"></script>
+<script src="js/boot-plus.js?v=0.3.7"></script>
+<script src="js/shisetsu.js?v=0.3.7"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>脳いきいき手帳（無料アプリ）｜うどん県発！ITシニアなんでも相談室</title>
-<meta name="description" content="毎日5分の脳トレ・からだ・記録がひとつになった、シニア向けの無料アプリ「脳いきいき手帳」。インストール不要、スマホ・タブレット・パソコンのブラウザですぐ使えます。">
+<meta name="description" content="毎日5分の脳トレと記録がひとつになった、シニア向けの無料アプリ「脳いきいき手帳」。インストール不要、スマホ・タブレット・パソコンのブラウザですぐ使えます。機能を増やした「プラス版」もあります。">
 <script>
 (function(){
   try{
@@ -27,6 +27,7 @@
     --sub:#55747C;
     --app:#4F6E56;
     --app-dark:#3E5744;
+    --gold:#B8862B;
   }
   *{box-sizing:border-box;}
   body{
@@ -276,6 +277,143 @@
     margin-top:2px;
   }
 
+  /* ===== プラス版 ===== */
+  .plus-band{
+    background:linear-gradient(135deg,#3E5744 0%,#2E4234 100%);
+    color:#fff;
+    border-radius:26px;
+    padding:40px 30px;
+    margin:56px 0 32px;
+    text-align:center;
+  }
+  .plus-band .badge{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    padding:6px 18px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.18);
+    margin-bottom:16px;
+  }
+  .plus-band h2{
+    margin:0 0 14px;
+    font-size:clamp(24px,5vw,32px);
+    font-weight:900;
+  }
+  .plus-band p{
+    margin:0 auto 22px;
+    font-size:16px;
+    max-width:560px;
+    opacity:0.94;
+  }
+  .plus-price{
+    display:inline-block;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.35);
+    border-radius:18px;
+    padding:16px 28px;
+    font-size:15px;
+  }
+  .plus-price strong{
+    display:block;
+    font-size:32px;
+    font-weight:900;
+    line-height:1.4;
+  }
+
+  .plus-compare{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:28px 26px;
+    margin-bottom:32px;
+    box-shadow:0 4px 16px rgba(31,90,114,0.06);
+    overflow-x:auto;
+  }
+  .plus-compare h3{
+    margin:0 0 16px;
+    font-size:19px;
+    color:var(--navy);
+    font-weight:900;
+  }
+  table.cmp{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14.5px;
+    min-width:460px;
+  }
+  table.cmp th, table.cmp td{
+    border-bottom:1px solid var(--border);
+    padding:12px 10px;
+    text-align:left;
+    vertical-align:top;
+  }
+  table.cmp thead th{
+    background:var(--green);
+    color:var(--navy);
+    font-weight:900;
+    white-space:nowrap;
+  }
+  table.cmp td.mark{
+    text-align:center;
+    font-weight:900;
+    white-space:nowrap;
+    width:96px;
+  }
+  table.cmp td.yes{ color:var(--app); }
+  table.cmp td.no{ color:#B9C6CA; }
+
+  .buy-card{
+    background:#FFF7E8;
+    border:1px solid #EBD9B4;
+    border-radius:24px;
+    padding:30px 26px;
+    margin-bottom:32px;
+    text-align:center;
+  }
+  .buy-card h3{
+    margin:0 0 12px;
+    font-size:20px;
+    color:#7A5A2E;
+    font-weight:900;
+  }
+  .buy-card p{
+    margin:0 0 18px;
+    font-size:15px;
+    color:#6B5735;
+  }
+  .buy-card .soon{
+    display:inline-block;
+    padding:14px 30px;
+    border-radius:999px;
+    background:#EFE2C6;
+    color:#7A5A2E;
+    font-weight:900;
+    font-size:16px;
+  }
+  .buy-card .ask{
+    display:inline-block;
+    margin-top:16px;
+    padding:13px 28px;
+    border-radius:999px;
+    background:var(--navy);
+    color:#fff;
+    text-decoration:none;
+    font-weight:700;
+    font-size:15px;
+  }
+  .plus-open{
+    display:inline-block;
+    margin-top:18px;
+    padding:14px 30px;
+    border-radius:999px;
+    background:var(--app);
+    color:#fff;
+    text-decoration:none;
+    font-weight:900;
+    font-size:16px;
+  }
+
   .note-card{
     background:#FFF7E8;
     border:1px solid #EBD9B4;
@@ -333,14 +471,14 @@
   <img class="cat" src="../nouikiiki/icon-512.png" alt="脳いきいき手帳のアイコン（黒猫のクロ）">
   <span class="badge">無料アプリのご紹介</span>
   <h1>脳いきいき手帳</h1>
-  <p>毎日5分。脳トレ・からだ・記録が、ひとつになった手帳アプリです。<br>案内役は、黒猫の「クロ」。</p>
+  <p>毎日5分。脳トレと記録が、ひとつになった手帳アプリです。<br>案内役は、黒猫の「クロ」。</p>
 </header>
 
 <main>
 
   <div class="launch-card">
-    <h2>いますぐ、お試しいただけます</h2>
-    <p>下のボタンを押すと、別のページでアプリが開きます。<br>申し込みや会員登録はいりません。無料です。</p>
+    <h2>いますぐ、無料でお使いいただけます</h2>
+    <p>下のボタンを押すと、別のページでアプリが開きます。<br>申し込みや会員登録はいりません。</p>
     <a class="launch-btn" href="../nouikiiki/" target="_blank" rel="noopener">脳いきいき手帳をひらく</a>
     <p class="launch-note">※新しいページ（別のタブ）で開きます。閉じれば、このページに戻ってこられます。</p>
   </div>
@@ -351,7 +489,7 @@
     <div class="tip-card">
       <div class="icon">🧠</div>
       <h3>頭の体操を習慣に</h3>
-      <p>計算・ことば・記憶など、日替わりで楽しめる脳トレが10種類以上。</p>
+      <p>記憶力ゲーム・パズル・クイズ。今日のぶんだけ、気軽に。</p>
     </div>
     <div class="tip-card">
       <div class="icon">📅</div>
@@ -359,93 +497,52 @@
       <p>やった日はカレンダーが緑色に。連続日数も出るので、励みになります。</p>
     </div>
     <div class="tip-card">
-      <div class="icon">👪</div>
-      <h3>ひとりでも、みんなでも</h3>
-      <p>ご家族との共有や、施設のレクリエーションにもお使いいただけます。</p>
+      <div class="icon">🐈‍⬛</div>
+      <h3>黒猫のクロが相手</h3>
+      <p>開くたびに声をかけてくれます。ひとりでも、さみしくありません。</p>
     </div>
   </div>
 
-  <h2 class="sec">どんな画面か、見てみましょう</h2>
+  <h2 class="sec">無料版の画面を見てみましょう</h2>
   <p class="sec-lead">実際の画面です。文字は大きく、ボタンは押しやすく作ってあります。</p>
 
   <div class="shots">
 
     <div class="shot">
-      <img src="../image/nouikiiki/home.png" alt="ホーム画面。あいさつと、今日のおすすめ、連続日数が表示されている">
+      <img src="../image/nouikiiki/free-home.png" alt="ホーム画面。あいさつと連続日数、記録を見るボタンが表示されている">
       <div class="body">
         <span class="label">ホーム</span>
         <h3>開くだけで、今日やることが決まる</h3>
-        <p>アプリを開くと、黒猫のクロが声をかけてくれます。「今日のおすすめ」を押すだけで始められるので、迷いません。</p>
+        <p>アプリを開くと、黒猫のクロが声をかけてくれます。あとはボタンを押すだけです。</p>
         <ul>
           <li>連続日数と、今月の実施回数がひと目でわかる</li>
-          <li>その日にやることは、こちらから提案します</li>
+          <li>下のタブで、ゲーム・クイズ・記録に移れる</li>
         </ul>
       </div>
     </div>
 
     <div class="shot">
-      <img src="../image/nouikiiki/asobu.png" alt="脳トレメニュー画面。記憶力ゲーム、順番おぼえ、脳トレクイズ、計算ドリルなどが並んでいる">
+      <img src="../image/nouikiiki/free-game-menu.png" alt="今日のゲーム画面。記憶力ゲームとパズルゲームが並んでいる">
       <div class="body">
-        <span class="label">脳トレ</span>
-        <h3>10種類以上。飽きずに続けられます</h3>
-        <p>「おぼえる・思い出す」「考える・計算する」「ことば」など、鍛えたい力ごとに分かれています。</p>
+        <span class="label">ゲーム・クイズ</span>
+        <h3>脳トレは3種類。むずかしさも選べます</h3>
+        <p>記憶力ゲーム（神経衰弱）とパズルは、かんたん・ふつう・むずかしいの3段階。クイズは24問です。</p>
         <ul>
-          <li>記憶力ゲーム／順番おぼえ／なかまはずれさがし</li>
-          <li>脳トレクイズ／計算ドリル／ことばさがし ほか</li>
+          <li>記憶力ゲーム／パズルゲーム</li>
+          <li>脳トレクイズ（計算・ことば・常識・思い出）</li>
         </ul>
       </div>
     </div>
 
     <div class="shot">
-      <img src="../image/nouikiiki/find.png" alt="なかまはずれさがしの画面。同じ絵の中に1つだけ違う絵がある">
-      <div class="body">
-        <span class="label">脳トレの例</span>
-        <h3>ルールは、ひと目でわかる簡単さ</h3>
-        <p>たとえば「なかまはずれさがし」は、1つだけちがう絵をさがすだけ。説明を読まなくても始められます。</p>
-        <ul>
-          <li>進むほど少しずつ難しくなります</li>
-          <li>まちがえても大丈夫。何度でもやり直せます</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/calendar.png" alt="記録カレンダー画面。脳トレをした日が緑色に塗られている">
+      <img src="../image/nouikiiki/free-calendar.png" alt="記録カレンダー画面。脳トレをした日が緑色に塗られている">
       <div class="body">
         <span class="label">きろく</span>
         <h3>「続いている」が、目で見てわかる</h3>
         <p>脳トレをした日は、カレンダーが緑色になります。塗りつぶされていくのが、いちばんの励みになります。</p>
         <ul>
           <li>連続日数・今月の実施回数を自動で集計</li>
-          <li>この2週間のようすをグラフで表示</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/karada.png" alt="からだとくらしの画面。いきいき体操、コグニサイズ、生活チェックなどが並んでいる">
-      <div class="body">
-        <span class="label">からだ</span>
-        <h3>頭だけでなく、からだと暮らしも</h3>
-        <p>からだを動かすこと・人と話すこと・よく眠ることは、頭の元気ともつながっていると言われています。</p>
-        <ul>
-          <li>いすに座ったままできる「いきいき体操」（声の案内つき）</li>
-          <li>足ぶみしながら数える「コグニサイズ」</li>
-          <li>今日の生活チェック（6つのいきいき習慣）</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/minna.png" alt="みんなと の画面。家族と共有する、思い出ばなし、みんなでレクが並んでいる">
-      <div class="body">
-        <span class="label">みんなと</span>
-        <h3>ご家族と、施設のレクリエーションにも</h3>
-        <p>人と話すこと・思い出を語ることは、脳にとって大きな刺激になります。おひとりでも、大勢でも使えます。</p>
-        <ul>
-          <li>思い出ばなし（回想法）の会話カード</li>
-          <li>大きな文字で出題する「みんなでレク」</li>
-          <li>施設向けに、1台を複数の利用者で使う設定もあります</li>
+          <li>記録はお使いの端末の中に保存されます</li>
         </ul>
       </div>
     </div>
@@ -477,6 +574,125 @@
     </div>
   </div>
 
+  <!-- ===================== プラス版 ===================== -->
+  <div class="plus-band" id="plus">
+    <span class="badge">もっと使いたい方へ</span>
+    <h2>脳いきいき手帳 プラス</h2>
+    <p>脳トレを10種類以上に増やし、「からだの体操」「みんなでレク」「記録の書き出し」まで加えた、
+       機能拡張版です。ご家庭でも、介護施設のレクリエーションでもお使いいただけます。</p>
+    <div class="plus-price">
+      買い切り（月々のお支払いはありません）
+      <strong>1,000円</strong>
+      一度お買い上げいただければ、その後の更新も無料です
+    </div>
+  </div>
+
+  <div class="plus-compare">
+    <h3>無料版と、プラス版のちがい</h3>
+    <table class="cmp">
+      <thead>
+        <tr><th>できること</th><th>無料版</th><th>プラス版</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>脳トレの種類</td><td class="mark">3種類</td><td class="mark yes">10種類以上</td></tr>
+        <tr><td>脳トレクイズ</td><td class="mark">24問</td><td class="mark yes">80問</td></tr>
+        <tr><td>記録カレンダー・連続日数</td><td class="mark yes">○</td><td class="mark yes">○</td></tr>
+        <tr><td>いすに座ってできる体操・コグニサイズ</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+        <tr><td>今日の生活チェック・いきいき豆知識</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+        <tr><td>思い出ばなし（回想法）・みんなでレク</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+        <tr><td>読み上げ（声の種類・速さの調整）</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+        <tr><td>文字の大きさを変える</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+        <tr><td>記録の書き出し（CSV）・自動バックアップ</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+        <tr><td>施設モード（1台を複数の利用者で使う）</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shots">
+
+    <div class="shot">
+      <img src="../image/nouikiiki/asobu.png" alt="脳トレメニュー画面。記憶力ゲーム、順番おぼえ、脳トレクイズ、計算ドリルなどが並んでいる">
+      <div class="body">
+        <span class="label">プラス版</span>
+        <h3>脳トレが10種類以上に</h3>
+        <p>「おぼえる・思い出す」「考える・計算する」「ことば」など、鍛えたい力ごとに分かれています。</p>
+        <ul>
+          <li>計算ドリル／順番おぼえ／なかまはずれさがし</li>
+          <li>いろとことば／ことば並べかえ ほか</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/karada.png" alt="からだとくらしの画面。いきいき体操、コグニサイズ、生活チェックなどが並んでいる">
+      <div class="body">
+        <span class="label">プラス版</span>
+        <h3>頭だけでなく、からだと暮らしも</h3>
+        <p>からだを動かすこと・人と話すこと・よく眠ることは、頭の元気ともつながっていると言われています。</p>
+        <ul>
+          <li>いすに座ったままできる「いきいき体操」（声の案内つき）</li>
+          <li>足ぶみしながら数える「コグニサイズ」</li>
+          <li>今日の生活チェック（6つのいきいき習慣）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/minna.png" alt="みんなと の画面。家族と共有する、思い出ばなし、みんなでレクが並んでいる">
+      <div class="body">
+        <span class="label">プラス版</span>
+        <h3>ご家族と、施設のレクリエーションにも</h3>
+        <p>人と話すこと・思い出を語ることは、脳にとって大きな刺激になります。おひとりでも、大勢でも使えます。</p>
+        <ul>
+          <li>思い出ばなし（回想法）の会話カード</li>
+          <li>大きな文字で出題する「みんなでレク」</li>
+          <li>1台を複数の利用者で使う「施設モード」</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/calendar.png" alt="プラス版の記録カレンダー画面。2週間のようすがグラフで表示されている">
+      <div class="body">
+        <span class="label">プラス版</span>
+        <h3>記録を残す・持ち出す</h3>
+        <p>この2週間のようすがグラフで見られます。月ごとの実施状況や活動の明細は、CSVで書き出せます。</p>
+        <ul>
+          <li>ご家族への報告や、施設の記録づくりに</li>
+          <li>毎日じどうでバックアップ。もしものときは元に戻せます</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shot">
+      <img src="../image/nouikiiki/plus-gate.png" alt="プラス版をひらいたときの合言葉入力画面">
+      <div class="body">
+        <span class="label">使いはじめ方</span>
+        <h3>「合言葉」を入れるだけ</h3>
+        <p>お買い上げの方に、合言葉をお伝えします。プラス版を開いて合言葉を入れれば、それだけで使いはじめられます。</p>
+        <ul>
+          <li>その端末では、次からは聞かれません</li>
+          <li>スマホとタブレットなど、お手持ちの端末でお使いいただけます</li>
+          <li><strong>無料版でつけた記録は、そのまま引き継がれます</strong></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="buy-card">
+    <h3>お買い求めについて</h3>
+    <p>ただいま、お支払いのご案内を準備しています。<br>
+       「使ってみたい」という方は、お問い合わせページからご連絡ください。<br>
+       準備ができしだい、こちらでご案内します。</p>
+    <span class="soon">お申し込み受付：準備中</span>
+    <br>
+    <a class="ask" href="../index.html#contact">お問い合わせページへ</a>
+    <div>
+      <a class="plus-open" href="../nouikiiki-plus/" target="_blank" rel="noopener">合言葉をお持ちの方はこちら</a>
+    </div>
+  </div>
+
   <div class="note-card">
     <h2>使う前に、知っておいていただきたいこと</h2>
     <ul>
@@ -485,12 +701,12 @@
       <li>スマホとパソコンなど、端末がちがうと記録は共通になりません。</li>
       <li>ブラウザの「閲覧データの削除」をすると、記録も消えますのでご注意ください。</li>
       <li>一度開いておけば、電波のない場所でも使えます（オフライン対応）。</li>
-      <li>無料でお使いいただけます。今後も改良を続けていきます。</li>
+      <li>無料版は、これからもずっと無料でお使いいただけます。</li>
     </ul>
   </div>
 
   <div class="launch-card" style="margin-top:0;">
-    <h2>準備はいりません</h2>
+    <h2>まずは無料版から</h2>
     <p>今日から、5分だけ。まずは1回、開いてみてください。</p>
     <a class="launch-btn" href="../nouikiiki/" target="_blank" rel="noopener">脳いきいき手帳をひらく</a>
   </div>

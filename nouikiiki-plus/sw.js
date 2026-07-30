@@ -1,13 +1,12 @@
-/* 脳いきいき手帳（無料版）サービスワーカー（オフライン対応）
-   アプリを更新したら、この APP_VER を上げること。 */
-const APP_VER = "0.1.2";
-
-/* キャッシュ名は「nouikiiki-free-」で始めること。
-   プラス版（nouikiiki-plus-）と同じサイトに置くため、
+/* 脳いきいき手帳 サービスワーカー（オフライン対応） */
+/* アプリを更新したら、この APP_VER を上げること。
+   index.html の <script src="...?v=..."> と同じ番号にそろえる。 */
+const APP_VER = "0.3.7";
+/* キャッシュ名は「nouikiiki-plus-」で始めること。
+   無料版（nouikiiki-free-）と同じサイトに置くため、
    お互いのキャッシュを消してしまわないように、名前で見分けている。 */
-const CACHE_PREFIX = "nouikiiki-free-";
+const CACHE_PREFIX = "nouikiiki-plus-";
 const CACHE_NAME = CACHE_PREFIX + APP_VER;
-
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,7 +14,15 @@ const APP_SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
-  "./kuro.png"
+  "./kuro.png",
+  "./js/gate.js?v=" + APP_VER,
+  "./js/records.js?v=" + APP_VER,
+  "./js/shisetsu.js?v=" + APP_VER,
+  "./js/plus-core.js?v=" + APP_VER,
+  "./js/games-plus.js?v=" + APP_VER,
+  "./js/karada.js?v=" + APP_VER,
+  "./js/minna.js?v=" + APP_VER,
+  "./js/boot-plus.js?v=" + APP_VER
 ];
 
 self.addEventListener("install", (event) => {
@@ -40,8 +47,8 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-/* アプリ本体（HTML）は「ネット優先」。
-   ここをキャッシュ優先にすると、アプリを直しても古いままの人が出てしまう。
+/* アプリ本体（HTML・JS）は「ネット優先」。
+   ここをキャッシュ優先にすると、アプリを更新しても古いままの人が出てしまう。
    通信できないときだけキャッシュを使う。
    フォントや画像など、それ以外は「キャッシュ優先」で速さを優先する。 */
 function isAppFile(url) {
@@ -57,6 +64,7 @@ self.addEventListener("fetch", (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
 
   if (isAppFile(url)) {
+    // ネット優先
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -75,6 +83,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // それ以外はキャッシュ優先
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
