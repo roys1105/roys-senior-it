@@ -456,6 +456,24 @@
     color:var(--sub);
     text-decoration:underline;
   }
+
+  /* --- 黒猫クロのひとこと --- */
+  .kuro-say{display:flex;align-items:center;gap:14px;margin:30px 0;}
+  .kuro-say img{width:96px;flex:0 0 96px;height:auto;display:block;}
+  .kuro-say .bubble{
+    position:relative;background:#fff;border:2px solid #1F5A72;border-radius:18px;
+    padding:14px 20px;font-size:16px;font-weight:700;color:#1F5A72;line-height:1.75;
+  }
+  .kuro-say .bubble::before{content:"";position:absolute;left:-11px;top:50%;margin-top:-10px;
+    width:0;height:0;border:10px solid transparent;border-right-color:#1F5A72;border-left:0;}
+  .kuro-say .bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;
+    width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
+  .closing .kuro-end{width:118px;height:auto;margin:0 auto 6px;display:block;}
+  .tip-card .icon img{height:46px;width:auto;display:block;}
+  @media(max-width:520px){
+    .kuro-say img{width:74px;flex:0 0 74px;}
+    .kuro-say .bubble{font-size:15px;padding:12px 15px;}
+  }
 </style>
 </head>
 <body>
@@ -474,6 +492,11 @@
   <div class="intro-card">
     <h2>この講座について</h2>
     <p>田舎にいながら、自分の得意を売り物に変えるまでの道のりを、全7回の動画で解説しています。特別な機材やスキルは必要ありません。フルテロップ字幕つきなので、音を出せない場所でもご覧いただけます。</p>
+  </div>
+
+  <div class="kuro-say">
+    <img src="../image/kuro/kuro-hello.png" alt="黒猫のクロ">
+    <p class="bubble">ようこそ！<br>気になるところから読んでいいんだよ。</p>
   </div>
 
   <section style="margin-bottom:48px;">
@@ -583,6 +606,11 @@
     <span>「</span>感想・お客様の声（あとで追加予定）<span>」</span>
   </div>
 
+  <div class="kuro-say">
+    <img src="../image/kuro/kuro-go.png" alt="黒猫のクロ">
+    <p class="bubble">ここまで見てくれてありがとう。<br>あとは、やってみるだけ！</p>
+  </div>
+
   <section class="faq">
     <h2>よくある質問</h2>
     <div class="faq-item">
@@ -606,7 +634,7 @@
 </main>
 
 <footer class="closing">
-  <div class="emoji">🌱</div>
+  <img class="kuro-end" src="../image/kuro/kuro-bye.png" alt="黒猫のクロ">
   <h2>小さく始めて、長く続ける。</h2>
   <p>まずは予告編から、気になるところだけでもご覧ください。</p>
   <div class="cta-row">

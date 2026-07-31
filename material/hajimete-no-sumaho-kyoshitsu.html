@@ -402,6 +402,24 @@
     font-weight:700;
     font-size:15px;
   }
+
+  /* --- 黒猫クロのひとこと --- */
+  .kuro-say{display:flex;align-items:center;gap:14px;margin:30px 0;}
+  .kuro-say img{width:96px;flex:0 0 96px;height:auto;display:block;}
+  .kuro-say .bubble{
+    position:relative;background:#fff;border:2px solid #1F5A72;border-radius:18px;
+    padding:14px 20px;font-size:16px;font-weight:700;color:#1F5A72;line-height:1.75;
+  }
+  .kuro-say .bubble::before{content:"";position:absolute;left:-11px;top:50%;margin-top:-10px;
+    width:0;height:0;border:10px solid transparent;border-right-color:#1F5A72;border-left:0;}
+  .kuro-say .bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;
+    width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
+  .closing .kuro-end{width:118px;height:auto;margin:0 auto 6px;display:block;}
+  .tip-card .icon img{height:46px;width:auto;display:block;}
+  @media(max-width:520px){
+    .kuro-say img{width:74px;flex:0 0 74px;}
+    .kuro-say .bubble{font-size:15px;padding:12px 15px;}
+  }
 </style>
 </head>
 <body>
@@ -420,6 +438,11 @@
   <div class="intro-card">
     <h2>この教材の使い方（教える方へ）</h2>
     <p>この教材は、スマホを初めて使うご家族に、優しく教えてあげるためのテキストです。1回で全部教えようとせず、1回30分くらい、1つの章ずつゆっくり進めるのがおすすめです。</p>
+  </div>
+
+  <div class="kuro-say">
+    <img src="../image/kuro/kuro-hello.png" alt="黒猫のクロ">
+    <p class="bubble">あわてなくて大丈夫。<br>ひとつずつ、ゆっくりいこうね。</p>
   </div>
 
   <div class="tips">
@@ -697,6 +720,11 @@
     </div>
   </section>
 
+  <div class="kuro-say">
+    <img src="../image/kuro/kuro-go.png" alt="黒猫のクロ">
+    <p class="bubble">ここまでおつかれさま！<br>できるようになったこと、数えてみよう。</p>
+  </div>
+
   <section class="checklist" id="checklist">
     <h2>練習チェックリスト</h2>
     <div class="checklist-grid">
@@ -742,7 +770,7 @@
 </main>
 
 <footer class="closing">
-  <div class="emoji">🌱</div>
+  <img class="kuro-end" src="../image/kuro/kuro-bye.png" alt="黒猫のクロ">
   <h2>焦らず、一緒に、少しずつ。</h2>
   <p>ご家族のペースに合わせて、何度でも一緒に練習しましょう。</p>
   <a class="back" href="../index.html">トップページに戻る</a>

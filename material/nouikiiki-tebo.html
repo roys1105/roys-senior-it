@@ -461,6 +461,24 @@
     font-weight:700;
     font-size:15px;
   }
+
+  /* --- 黒猫クロのひとこと --- */
+  .kuro-say{display:flex;align-items:center;gap:14px;margin:30px 0;}
+  .kuro-say img{width:96px;flex:0 0 96px;height:auto;display:block;}
+  .kuro-say .bubble{
+    position:relative;background:#fff;border:2px solid #1F5A72;border-radius:18px;
+    padding:14px 20px;font-size:16px;font-weight:700;color:#1F5A72;line-height:1.75;
+  }
+  .kuro-say .bubble::before{content:"";position:absolute;left:-11px;top:50%;margin-top:-10px;
+    width:0;height:0;border:10px solid transparent;border-right-color:#1F5A72;border-left:0;}
+  .kuro-say .bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;
+    width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
+  .closing .kuro-end{width:118px;height:auto;margin:0 auto 6px;display:block;}
+  .tip-card .icon img{height:46px;width:auto;display:block;}
+  @media(max-width:520px){
+    .kuro-say img{width:74px;flex:0 0 74px;}
+    .kuro-say .bubble{font-size:15px;padding:12px 15px;}
+  }
 </style>
 </head>
 <body>
@@ -483,6 +501,11 @@
     <p class="launch-note">※新しいページ（別のタブ）で開きます。閉じれば、このページに戻ってこられます。</p>
   </div>
 
+  <div class="kuro-say">
+    <img src="../image/kuro/kuro-hello.png" alt="黒猫のクロ">
+    <p class="bubble">ぼくがクロだよ。<br>いっしょに、あたまの体操をしよう！</p>
+  </div>
+
   <h2 class="sec">こんな方に</h2>
   <p class="sec-lead">「難しいことはいらない。毎日ちょっとだけ、続けたい」という方のために作りました。</p>
   <div class="tips">
@@ -497,7 +520,7 @@
       <p>やった日はカレンダーが緑色に。連続日数も出るので、励みになります。</p>
     </div>
     <div class="tip-card">
-      <div class="icon">🐈‍⬛</div>
+      <div class="icon"><img src="../image/kuro/kuro.png" alt="黒猫のクロ"></div>
       <h3>黒猫のクロが相手</h3>
       <p>開くたびに声をかけてくれます。ひとりでも、さみしくありません。</p>
     </div>
@@ -693,6 +716,11 @@
     </div>
   </div>
 
+  <div class="kuro-say">
+    <img src="../image/kuro/kuro-night.png" alt="黒猫のクロ">
+    <p class="bubble">むりをしない日があってもいいんだよ。<br>また明日、待ってるね。</p>
+  </div>
+
   <div class="note-card">
     <h2>使う前に、知っておいていただきたいこと</h2>
     <ul>
@@ -714,7 +742,7 @@
 </main>
 
 <footer class="closing">
-  <div class="emoji">🐈‍⬛</div>
+  <img class="kuro-end" src="../image/kuro/kuro-bye.png" alt="黒猫のクロ">
   <h2>使い方でお困りのときは</h2>
   <p>「開き方がわからない」「家族の分も設定したい」など、遠慮なくご相談ください。</p>
   <a class="back" href="../index.html#contact">お問い合わせページへ</a>
