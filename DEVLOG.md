@@ -73,6 +73,13 @@
   に置き換えるだけ。CSSの `.is-soon` は残しておいてよい。
 - サイト全体を検索し、**同じような未設定のリンク（`★…★` や `href="#"`）は他に無い**ことを確認した。
 
+### Roy's Channel との行き来を「同じタブ」にした
+- 「もう一つの顔」の Roy's Channel ボタンから **`target="roys-channel"` を外した**（同じタブで移動）。
+  下にあった「別のタブで開きます。すでに開いているときは…」の注記も削除。
+- **タブに名前を付けて使い回す方法は廃止した。** ブラウザは「そのページ自身が開いたタブ」しか
+  見つけられないため、手で開いたタブがあると結局タブが増えてしまう。同じタブなら絶対に増えない。
+- Roy's Channel 側も同じにしてある（詳しくは `dev/site/roys-channel/DEVLOG.md`）。
+
 ### 講座ページの「戻る」と問い合わせ先を Roy's Channel に向けた
 - `material/inaka-hitori-kasegu.html` の3か所を変更。飛び先はいずれも Roy's Channel。
   - 上部「トップに戻る」→ **「Roy's Channel に戻る」**（`https://roys1105.github.io/roys-channel/`）
