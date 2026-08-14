@@ -417,6 +417,18 @@
     font-weight:900;
     font-size:16px;
   }
+  /* プラス版の準備が整うまでの「押せない」表示。
+     色を落として、カーソルも指の形にしない。 */
+  .plus-open.is-soon{
+    background:#D8DEE0;
+    color:#5B6E75;
+    cursor:default;
+  }
+  .plus-soon-note{
+    margin:10px 0 0;
+    font-size:14px;
+    color:var(--sub);
+  }
 
   .note-card{
     background:#FFF7E8;
@@ -609,7 +621,11 @@
        くわしい内容と、お申し込みの方法が決まりましたら、このページでご案内します。</p>
     <span class="soon">近日ご案内します</span>
     <div>
-      <a class="plus-open" href="../nouikiiki-plus/" target="_blank" rel="noopener">合言葉をお持ちの方はこちら</a>
+      <!-- プラス版の準備が整うまでは、押せないボタンにしておく。
+           整ったら、下の <span> を次の1行に戻す：
+           <a class="plus-open" href="../nouikiiki-plus/" target="_blank" rel="noopener">合言葉をお持ちの方はこちら</a> -->
+      <span class="plus-open is-soon" aria-disabled="true">合言葉をお持ちの方はこちら</span>
+      <p class="plus-soon-note">こちらは準備が整いしだい、お使いいただけるようになります。</p>
     </div>
   </div>
 
