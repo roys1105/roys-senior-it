@@ -7,6 +7,10 @@
 <script>
 (function(){
   try{
+    // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
+    // 独自ドメインに変えたら、下の配列にそのドメインを足す。
+    var LIVE_HOSTS = ["roys1105.github.io"];
+    if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -414,11 +418,56 @@
     width:0;height:0;border:10px solid transparent;border-right-color:#1F5A72;border-left:0;}
   .kuro-say .bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;
     width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
-  .closing .kuro-end{width:118px;height:auto;margin:0 auto 6px;display:block;}
+  .closing .kuro-end{width:104px;height:auto;margin:0 auto 6px;display:block;}
   .tip-card .icon img{height:46px;width:auto;display:block;}
   @media(max-width:520px){
     .kuro-say img{width:74px;flex:0 0 74px;}
     .kuro-say .bubble{font-size:15px;padding:12px 15px;}
+  }
+
+  /* ===== 教材セットのご案内（2026-08-14 追加） ===== */
+  .set-offer{
+    max-width:760px;
+    margin:0 auto 40px;
+    background:#FFF7E8;
+    border:1px solid #EBD9B4;
+    border-radius:24px;
+    padding:30px 26px;
+  }
+  .set-offer h2{
+    margin:0 0 14px;
+    font-size:21px;
+    color:var(--navy);
+    text-align:center;
+  }
+  .set-offer p{ margin:0 0 14px; color:var(--text); line-height:1.9; }
+  .set-offer ul{ margin:0 0 18px; padding-left:1.2em; color:var(--text); line-height:1.9; }
+  .set-offer li{ margin-bottom:8px; }
+  .set-offer .price{
+    text-align:center;
+    font-size:22px;
+    font-weight:900;
+    color:#7A5A2E;
+    margin:0 0 6px;
+  }
+  .set-offer .buy-btn{
+    display:block;
+    max-width:340px;
+    margin:0 auto;
+    text-align:center;
+    padding:15px 24px;
+    background:var(--navy);
+    color:#fff;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:16px;
+  }
+  .set-offer .honest{
+    margin:16px 0 0;
+    font-size:14px;
+    color:var(--sub);
+    line-height:1.8;
   }
 </style>
 </head>
@@ -767,10 +816,28 @@
     </div>
   </section>
 
+
+  <!-- ===================== 教材セットのご案内（2026-08-14 追加） ===================== -->
+  <section class="set-offer">
+    <h2>印刷して使える「教材セット」もあります</h2>
+    <p>このページの内容は、どなたでも<strong>無料</strong>でお読みいただけます。読むだけなら、これで全部です。</p>
+    <p>そのうえで「紙に印刷して親に渡したい」「画面に映しながら教えたい」という方のために、
+       同じ内容を <strong>Word・スライド・PDF</strong> の3つの形にまとめた教材セットをご用意しています。</p>
+    <ul>
+      <li><strong>Wordの教科書（全11ページ）</strong>　ご家庭に合わせて、書き足したり削ったりできます</li>
+      <li><strong>スライド（13枚）</strong>　実家で画面を見せながら教えるときに</li>
+      <li><strong>PDF</strong>　印刷して、そのまま渡せます</li>
+    </ul>
+    <p class="price">1,980円（買い切り）</p>
+    <a class="buy-btn" href="★NOTE_URL★" target="_blank" rel="noopener">教材セットを見る（note）</a>
+    <p class="honest">※ 本文はこのページで無料で読めます。教材セットは、その内容を
+       「印刷して渡せる形」「見せながら教えられる形」にまとめたものです。</p>
+  </section>
+
 </main>
 
 <footer class="closing">
-  <img class="kuro-end" src="../image/kuro/kuro-bye.png" alt="黒猫のクロ">
+  <img class="kuro-end" src="../image/kuro/kuro.png" alt="黒猫のクロ">
   <h2>焦らず、一緒に、少しずつ。</h2>
   <p>ご家族のペースに合わせて、何度でも一緒に練習しましょう。</p>
   <a class="back" href="../index.html">トップページに戻る</a>

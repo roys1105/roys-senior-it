@@ -7,6 +7,10 @@
 <script>
 (function(){
   try{
+    // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
+    // 独自ドメインに変えたら、下の配列にそのドメインを足す。
+    var LIVE_HOSTS = ["roys1105.github.io"];
+    if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
       method:"POST",
       headers:{"Content-Type":"application/json"},

@@ -7,6 +7,10 @@
 <script>
 (function(){
   try{
+    // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
+    // 独自ドメインに変えたら、下の配列にそのドメインを足す。
+    var LIVE_HOSTS = ["roys1105.github.io"];
+    if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -368,7 +372,7 @@
     color:var(--text);
     text-align:center;
   }
-  .voice-box span{ color:#8FB0B8; }
+  .voice-box span{ color:#33505A; }
 
   section.faq{
     background:#fff;
@@ -468,7 +472,7 @@
     width:0;height:0;border:10px solid transparent;border-right-color:#1F5A72;border-left:0;}
   .kuro-say .bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;
     width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
-  .closing .kuro-end{width:118px;height:auto;margin:0 auto 6px;display:block;}
+  .closing .kuro-end{width:104px;height:auto;margin:0 auto 6px;display:block;}
   .tip-card .icon img{height:46px;width:auto;display:block;}
   @media(max-width:520px){
     .kuro-say img{width:74px;flex:0 0 74px;}
@@ -484,7 +488,7 @@
   <span class="badge">動画で学べるミニ講座</span>
   <h1>田舎暮らしのまま、<br>独りで稼ぐ教科書</h1>
   <p>いまあるものを使って、小さく始めて、長く続ける</p>
-  <div class="who">著者：ロイ（61歳・香川県三豊市在住／会社員をしながら発信中）</div>
+  <div class="who">著者：ロイ（<span class="roy-age">61</span>歳・香川県三豊市在住／会社員をしながら発信中）</div>
 </header>
 
 <main>
@@ -598,7 +602,7 @@
     <img src="../image/profile-photo.jpg" alt="ロイのプロフィール写真">
     <div>
       <h2>はじめまして、ロイです</h2>
-      <p>61歳、香川県三豊市在住。会社員を続けながら発信を続けています。むずかしい言葉を使わず、実際に自分がやってわかったことだけをお伝えするようにしています。</p>
+      <p><span class="roy-age">61</span>歳、香川県三豊市在住。会社員を続けながら発信を続けています。むずかしい言葉を使わず、実際に自分がやってわかったことだけをお伝えするようにしています。</p>
     </div>
   </section>
 
@@ -634,7 +638,7 @@
 </main>
 
 <footer class="closing">
-  <img class="kuro-end" src="../image/kuro/kuro-bye.png" alt="黒猫のクロ">
+  <img class="kuro-end" src="../image/kuro/kuro.png" alt="黒猫のクロ">
   <h2>小さく始めて、長く続ける。</h2>
   <p>まずは予告編から、気になるところだけでもご覧ください。</p>
   <div class="cta-row">
@@ -644,6 +648,23 @@
   <p class="note">※本講座は現在無料で公開中です。正式版（教材）は今後の販売を予定しています。</p>
   <a class="back" href="../index.html">トップページに戻る</a>
 </footer>
+
+<script>
+(function(){
+  // 年齢の自動計算（1964年11月5日生まれ）。トップページの getAge() と同じ考え方。
+  // 日本時間の今日を出し、誕生日がまだなら1つ引く。
+  try{
+    var BIRTH_YEAR = 1964, BIRTH_MONTH = 11, BIRTH_DAY = 5;
+    var jst = new Date(Date.now() + 9 * 3600 * 1000);
+    var now = new Date(jst.toISOString().slice(0, 10) + "T00:00:00+09:00");
+    var age = now.getFullYear() - BIRTH_YEAR;
+    var m = now.getMonth() + 1, d = now.getDate();
+    if (m < BIRTH_MONTH || (m === BIRTH_MONTH && d < BIRTH_DAY)) { age -= 1; }
+    var nodes = document.querySelectorAll(".roy-age");
+    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = age; }
+  }catch(e){}
+})();
+</script>
 
 </body>
 </html>

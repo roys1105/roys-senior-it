@@ -5,6 +5,7 @@ index_backup_*.html
 # (在庫の本数・出す順番・検品メモ・戦略の判断が書いてある)
 note放出計画.md
 note告知_*.md
+note教材記事_*.md
 
 # original (unoptimized) source photos — only the resized web copies
 # (course-cover.jpg / profile-photo.jpg / hero-bg.jpg) are tracked

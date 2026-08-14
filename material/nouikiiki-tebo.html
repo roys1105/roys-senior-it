@@ -8,6 +8,10 @@
 <script>
 (function(){
   try{
+    // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
+    // 独自ドメインに変えたら、下の配列にそのドメインを足す。
+    var LIVE_HOSTS = ["roys1105.github.io"];
+    if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -473,7 +477,7 @@
     width:0;height:0;border:10px solid transparent;border-right-color:#1F5A72;border-left:0;}
   .kuro-say .bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;
     width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
-  .closing .kuro-end{width:118px;height:auto;margin:0 auto 6px;display:block;}
+  .closing .kuro-end{width:104px;height:auto;margin:0 auto 6px;display:block;}
   .tip-card .icon img{height:46px;width:auto;display:block;}
   @media(max-width:520px){
     .kuro-say img{width:74px;flex:0 0 74px;}
@@ -597,120 +601,13 @@
     </div>
   </div>
 
-  <!-- ===================== プラス版 ===================== -->
-  <div class="plus-band" id="plus">
-    <span class="badge">もっと使いたい方へ</span>
-    <h2>脳いきいき手帳 プラス</h2>
-    <p>脳トレを10種類以上に増やし、「からだの体操」「みんなでレク」「記録の書き出し」まで加えた、
-       機能拡張版です。ご家庭でも、介護施設のレクリエーションでもお使いいただけます。</p>
-    <div class="plus-price">
-      買い切り（月々のお支払いはありません）
-      <strong>1,000円</strong>
-      一度お買い上げいただければ、その後の更新も無料です
-    </div>
-  </div>
-
-  <div class="plus-compare">
-    <h3>無料版と、プラス版のちがい</h3>
-    <table class="cmp">
-      <thead>
-        <tr><th>できること</th><th>無料版</th><th>プラス版</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>脳トレの種類</td><td class="mark">3種類</td><td class="mark yes">10種類以上</td></tr>
-        <tr><td>脳トレクイズ</td><td class="mark">24問</td><td class="mark yes">80問</td></tr>
-        <tr><td>記録カレンダー・連続日数</td><td class="mark yes">○</td><td class="mark yes">○</td></tr>
-        <tr><td>いすに座ってできる体操・コグニサイズ</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-        <tr><td>今日の生活チェック・いきいき豆知識</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-        <tr><td>思い出ばなし（回想法）・みんなでレク</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-        <tr><td>読み上げ（声の種類・速さの調整）</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-        <tr><td>文字の大きさを変える</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-        <tr><td>記録の書き出し（CSV）・自動バックアップ</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-        <tr><td>施設モード（1台を複数の利用者で使う）</td><td class="mark no">－</td><td class="mark yes">○</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="shots">
-
-    <div class="shot">
-      <img src="../image/nouikiiki/asobu.png" alt="脳トレメニュー画面。記憶力ゲーム、順番おぼえ、脳トレクイズ、計算ドリルなどが並んでいる">
-      <div class="body">
-        <span class="label">プラス版</span>
-        <h3>脳トレが10種類以上に</h3>
-        <p>「おぼえる・思い出す」「考える・計算する」「ことば」など、鍛えたい力ごとに分かれています。</p>
-        <ul>
-          <li>計算ドリル／順番おぼえ／なかまはずれさがし</li>
-          <li>いろとことば／ことば並べかえ ほか</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/karada.png" alt="からだとくらしの画面。いきいき体操、コグニサイズ、生活チェックなどが並んでいる">
-      <div class="body">
-        <span class="label">プラス版</span>
-        <h3>頭だけでなく、からだと暮らしも</h3>
-        <p>からだを動かすこと・人と話すこと・よく眠ることは、頭の元気ともつながっていると言われています。</p>
-        <ul>
-          <li>いすに座ったままできる「いきいき体操」（声の案内つき）</li>
-          <li>足ぶみしながら数える「コグニサイズ」</li>
-          <li>今日の生活チェック（6つのいきいき習慣）</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/minna.png" alt="みんなと の画面。家族と共有する、思い出ばなし、みんなでレクが並んでいる">
-      <div class="body">
-        <span class="label">プラス版</span>
-        <h3>ご家族と、施設のレクリエーションにも</h3>
-        <p>人と話すこと・思い出を語ることは、脳にとって大きな刺激になります。おひとりでも、大勢でも使えます。</p>
-        <ul>
-          <li>思い出ばなし（回想法）の会話カード</li>
-          <li>大きな文字で出題する「みんなでレク」</li>
-          <li>1台を複数の利用者で使う「施設モード」</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/calendar.png" alt="プラス版の記録カレンダー画面。2週間のようすがグラフで表示されている">
-      <div class="body">
-        <span class="label">プラス版</span>
-        <h3>記録を残す・持ち出す</h3>
-        <p>この2週間のようすがグラフで見られます。月ごとの実施状況や活動の明細は、CSVで書き出せます。</p>
-        <ul>
-          <li>ご家族への報告や、施設の記録づくりに</li>
-          <li>毎日じどうでバックアップ。もしものときは元に戻せます</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shot">
-      <img src="../image/nouikiiki/plus-gate.png" alt="プラス版をひらいたときの合言葉入力画面">
-      <div class="body">
-        <span class="label">使いはじめ方</span>
-        <h3>「合言葉」を入れるだけ</h3>
-        <p>お買い上げの方に、合言葉をお伝えします。プラス版を開いて合言葉を入れれば、それだけで使いはじめられます。</p>
-        <ul>
-          <li>その端末では、次からは聞かれません</li>
-          <li>スマホとタブレットなど、お手持ちの端末でお使いいただけます</li>
-          <li><strong>無料版でつけた記録は、そのまま引き継がれます</strong></li>
-        </ul>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="buy-card">
-    <h3>お買い求めについて</h3>
-    <p>ただいま、お支払いのご案内を準備しています。<br>
-       「使ってみたい」という方は、お問い合わせページからご連絡ください。<br>
-       準備ができしだい、こちらでご案内します。</p>
-    <span class="soon">お申し込み受付：準備中</span>
-    <br>
-    <a class="ask" href="../index.html#contact">お問い合わせページへ</a>
+  <!-- ===================== プラス版（準備中のお知らせ） ===================== -->
+  <div class="buy-card" id="plus">
+    <h3>「脳いきいき手帳 プラス」を準備しています</h3>
+    <p>脳トレの種類を増やし、「からだの体操」「みんなでレク」「記録の書き出し」を加えた
+       機能拡張版を準備しています。<br>
+       くわしい内容と、お申し込みの方法が決まりましたら、このページでご案内します。</p>
+    <span class="soon">近日ご案内します</span>
     <div>
       <a class="plus-open" href="../nouikiiki-plus/" target="_blank" rel="noopener">合言葉をお持ちの方はこちら</a>
     </div>
@@ -742,7 +639,7 @@
 </main>
 
 <footer class="closing">
-  <img class="kuro-end" src="../image/kuro/kuro-bye.png" alt="黒猫のクロ">
+  <img class="kuro-end" src="../image/kuro/kuro.png" alt="黒猫のクロ">
   <h2>使い方でお困りのときは</h2>
   <p>「開き方がわからない」「家族の分も設定したい」など、遠慮なくご相談ください。</p>
   <a class="back" href="../index.html#contact">お問い合わせページへ</a>
