@@ -5,9 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>特定商取引法に基づく表記 | Roy's Channel</title>
 <script>
-// このタブの名札。Roy's Channel 側のリンク（target="roy-senior"）が
-// このタブを見つけて、新しいタブを作らずにここへ切り替えられるようにする。
-window.name = 'roy-senior';
+// このページは Roy's Channel とシニア相談室の**両方**からリンクされている。
+// そこで「どちらから来たか」を見て、タブの名札と「戻る」先を変える。
+(function () {
+  try {
+    // 1つ前に見ていたページのアドレス。同じ roys1105.github.io の中なので、
+    // どちらのサイトから来たのかが分かる。
+    var fromMain = document.referrer.indexOf('/roys-channel/') >= 0;
+
+    // タブに名札がまだ無いとき（アドレスを直接開いたときなど）だけ決める。
+    // すでに名札があるタブは、そのタブの持ち主を尊重してそのままにする。
+    if (!window.name) {
+      window.name = fromMain ? 'roy-main' : 'roy-senior';
+    }
+
+    // 「戻る」先を、来た方向に合わせて差し替える。
+    // 何も分からないときは、これまでどおりシニア相談室のトップに戻す。
+    if (fromMain || window.name === 'roy-main') {
+      document.addEventListener('DOMContentLoaded', function () {
+        var back = document.querySelector('a.back');
+        if (back) { back.setAttribute('href', 'https://roys1105.github.io/roys-channel/'); }
+      });
+    }
+  } catch (e) {}
+})();
 </script>
 <script>
 (function(){
