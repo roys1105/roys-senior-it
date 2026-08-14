@@ -9,19 +9,27 @@
 // そこで「どちらから来たか」を見て、タブの名札と「戻る」先を変える。
 (function () {
   try {
-    // 1つ前に見ていたページのアドレス。同じ roys1105.github.io の中なので、
-    // どちらのサイトから来たのかが分かる。
-    var fromMain = document.referrer.indexOf('/roys-channel/') >= 0;
+    // どちらから来たかの判断は2段構え。
+    //  1) アドレスの「?src=main」… Roy's Channel 側のリンクに付けてある。いちばん確実。
+    //  2) 1つ前に見ていたページ（referrer）… 上が無いときの予備。
+    //     2つのサイトは同じ roys1105.github.io なので、パスまで読める。
+    var src = '';
+    try { src = new URLSearchParams(location.search).get('src') || ''; } catch (e) {}
+    var fromMain = (src === 'main') || document.referrer.indexOf('/roys-channel/') >= 0;
 
-    // タブに名札がまだ無いとき（アドレスを直接開いたときなど）だけ決める。
-    // すでに名札があるタブは、そのタブの持ち主を尊重してそのままにする。
-    if (!window.name) {
-      window.name = fromMain ? 'roy-main' : 'roy-senior';
+    // 来た方向がはっきりしているときは、タブの名札もそれに合わせる。
+    // （メインから来たのにタブが「シニア」のままだと、次の行き先を間違えるため）
+    var fromSenior = (src === 'senior') ||
+      (document.referrer.indexOf('/roys-senior-it/') >= 0 && document.referrer.indexOf('tokushoho') < 0);
+    if (fromMain) {
+      window.name = 'roy-main';
+    } else if (fromSenior || !window.name) {
+      window.name = 'roy-senior';
     }
 
     // 「戻る」先を、来た方向に合わせて差し替える。
     // 何も分からないときは、これまでどおりシニア相談室のトップに戻す。
-    if (fromMain || window.name === 'roy-main') {
+    if (fromMain) {
       document.addEventListener('DOMContentLoaded', function () {
         var back = document.querySelector('a.back');
         if (back) { back.setAttribute('href', 'https://roys1105.github.io/roys-channel/'); }
