@@ -74,9 +74,13 @@
 - サイト全体を検索し、**同じような未設定のリンク（`★…★` や `href="#"`）は他に無い**ことを確認した。
 
 ### タブ2枚で行き来する形にした（名札方式）★これが最終形
+- **講座ページ（`material/inaka-hitori-kasegu.html`）だけは名札が `roy-main`。**
+  URLはシニアサイトの下にあるが、中身は Roy's Channel の講座だから。
+  `roy-senior` にしていたときは、**シニア相談室を見ていたタブが講座に置き換わってしまった。**
+  URLの置き場所と、どのタブで見せたいかは別の話。
 - 各ページで `window.name` を設定し、リンクに `target` を付けた。
   - シニアサイトの各ページ：`window.name = "roy-senior"`
-    （`index.html`・`tokushoho.html`・`material/` の3ページ）
+    （`index.html`・`tokushoho.html`・スマホ教室・脳いきいき手帳。**講座ページは除く**）
   - Roy's Channel へのリンク4か所に `target="roy-main"`
     （トップの「もう一つの顔」のボタン＋講座ページの3つ）
 - 名札の付いたタブがあればそこへ切り替わり、無ければ新しく開く。
