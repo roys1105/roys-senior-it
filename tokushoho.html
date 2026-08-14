@@ -10,7 +10,7 @@
     fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({type:"visit",page:"/tokushoho.html"})
+      body:JSON.stringify({type:"visit",page:"/tokushoho.html",from:(function(){try{return new URLSearchParams(location.search).get("from")||""}catch(e){return ""}})()})
     }).catch(function(){});
   }catch(e){}
 })();
