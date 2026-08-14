@@ -463,6 +463,21 @@
     font-weight:700;
     font-size:16px;
   }
+  /* noteの販売ページができるまでの「準備中」表示。押せないことが見て分かるように、
+     色を落として指の形（カーソル）も変えない。 */
+  .set-offer .buy-btn.is-soon{
+    background:#D8DEE0;
+    color:#5B6E75;
+    cursor:default;
+    box-shadow:none;
+  }
+  .set-offer .soon-note{
+    margin:12px 0 0;
+    text-align:center;
+    font-size:14px;
+    color:var(--sub);
+    line-height:1.8;
+  }
   .set-offer .honest{
     margin:16px 0 0;
     font-size:14px;
@@ -829,7 +844,11 @@
       <li><strong>PDF</strong>　印刷して、そのまま渡せます</li>
     </ul>
     <p class="price">1,980円（買い切り）</p>
-    <a class="buy-btn" href="★NOTE_URL★" target="_blank" rel="noopener">教材セットを見る（note）</a>
+    <!-- noteの販売ページができるまでは、押せないボタンにしておく。
+         できたら、下の <span> を次の1行に戻す：
+         <a class="buy-btn" href="noteのURL" target="_blank" rel="noopener">教材セットを見る（note）</a> -->
+    <span class="buy-btn is-soon" aria-disabled="true">ただいま準備中です</span>
+    <p class="soon-note">教材セットは、いま準備を進めています。<br>ご用意ができましたら、このページでお知らせします。</p>
     <p class="honest">※ 本文はこのページで無料で読めます。教材セットは、その内容を
        「印刷して渡せる形」「見せながら教えられる形」にまとめたものです。</p>
   </section>
