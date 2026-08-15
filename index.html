@@ -27,6 +27,15 @@
       // 独自ドメインに変えたら、下の配列にそのドメインを足す。
       var LIVE_HOSTS = ["roys1105.github.io"];
       if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
+      // ロイさん本人のアクセスは数えない。
+      // 一度だけ末尾に ?roy=1 を付けて開けば、その端末では以後ずっと数えない。
+      // 数えるほうに戻したいときは ?roy=0 を付けて開く。
+      try{
+        var rq = new URLSearchParams(location.search).get("roy");
+        if (rq === "1") localStorage.setItem("roy_owner","1");
+        if (rq === "0") localStorage.removeItem("roy_owner");
+        if (localStorage.getItem("roy_owner") === "1") return;
+      }catch(e){}
       fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
