@@ -5,17 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>脳いきいき手帳（無料アプリ）｜うどん県発！ITシニアなんでも相談室</title>
 <meta name="description" content="毎日5分の脳トレと記録がひとつになった、シニア向けの無料アプリ「脳いきいき手帳」。インストール不要、スマホ・タブレット・パソコンのブラウザですぐ使えます。機能を増やした「プラス版」もあります。">
+<link rel="canonical" href="https://roys-senior-it.pages.dev/material/nouikiiki-tebo.html">
 <script>
-// このタブの名札。Roy's Channel 側のリンク（target="roy-senior"）が
-// このタブを見つけて、新しいタブを作らずにここへ切り替えられるようにする。
-window.name = 'roy-senior';
+/* --- 旧住所（GitHub Pages）で開かれたら、新しい住所へ送る ---
+   公開先は Cloudflare Pages（roys-senior-it.pages.dev）。
+   GitHub は履歴の保管用だが、同じファイルが GitHub Pages にも出てしまうため、
+   古いリンクから来た人をここで新しい住所へ渡す。
+   ※転送をやめたいときは、この <script> ブロックごと消す。
+   ※タブの「名札」（window.name）は廃止した。別ドメインをまたぐと消えるため。 */
+(function () {
+  try {
+    if (location.hostname === 'roys1105.github.io') {
+      var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '');
+      location.replace('https://roys-senior-it.pages.dev/' + rest + location.search + location.hash);
+    }
+  } catch (e) {}
+})();
 </script>
 <script>
 (function(){
   try{
     // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
     // 独自ドメインに変えたら、下の配列にそのドメインを足す。
-    var LIVE_HOSTS = ["roys1105.github.io"];
+    var LIVE_HOSTS = ["roys-senior-it.pages.dev"];
     if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     // ロイさん本人のアクセスは数えない。
     // 一度だけ末尾に ?roy=1 を付けて開けば、その端末では以後ずっと数えない。

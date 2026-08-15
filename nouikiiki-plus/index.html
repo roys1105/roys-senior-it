@@ -2,8 +2,24 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<script>
+/* --- 旧住所（GitHub Pages）で開かれたら、新しい住所へ送る ---
+   公開先は Cloudflare Pages（roys-senior-it.pages.dev）。住所は一本化する方針（ロイさんの裁定・2026-08-15）。
+   ※注意：このアプリの記録は端末の localStorage に入っており、**住所ごとに別物**。
+     旧住所で使っていた方は、転送後は記録が空から始まる（記録が消えたのではなく、別の引き出しになる）。
+   ※転送をやめたいときは、この <script> ブロックごと消す。 */
+(function () {
+  try {
+    if (location.hostname === 'roys1105.github.io') {
+      var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '');
+      location.replace('https://roys-senior-it.pages.dev/' + rest + location.search + location.hash);
+    }
+  } catch (e) {}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>脳いきいき手帳 プラス</title>
+<link rel="canonical" href="https://roys-senior-it.pages.dev/nouikiiki-plus/">
 <meta name="description" content="脳トレ・記録・家族との見守りを楽しく続ける手帳アプリ">
 <meta name="theme-color" content="#4F6E56">
 <link rel="manifest" href="manifest.webmanifest">

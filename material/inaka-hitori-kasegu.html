@@ -4,20 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>田舎暮らしのまま、独りで稼ぐ教科書｜Roy's Channel</title>
+<link rel="canonical" href="https://roys-senior-it.pages.dev/material/inaka-hitori-kasegu.html">
 <script>
-// このタブの名札。
-// このページはURLこそシニアサイトの下にあるが、中身は Roy's Channel の講座なので、
-// メインサイトと同じ 'roy-main' を名乗る。こうすると Roy's Channel のタブで開き、
-// 「トップに戻る」でそのタブのまま Roy's Channel に戻れる。
-// （'roy-senior' にすると、シニア相談室を開いているタブが講座に置き換わってしまう）
-window.name = 'roy-main';
+/* --- 旧住所（GitHub Pages）で開かれたら、新しい住所へ送る ---
+   公開先は Cloudflare Pages（roys-senior-it.pages.dev）。
+   GitHub は履歴の保管用だが、同じファイルが GitHub Pages にも出てしまうため、
+   古いリンクから来た人をここで新しい住所へ渡す。
+   ※転送をやめたいときは、この <script> ブロックごと消す。
+   ※タブの「名札」（window.name）は廃止した。別ドメインをまたぐと消えるため。 */
+(function () {
+  try {
+    if (location.hostname === 'roys1105.github.io') {
+      var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '');
+      location.replace('https://roys-senior-it.pages.dev/' + rest + location.search + location.hash);
+    }
+  } catch (e) {}
+})();
 </script>
 <script>
 (function(){
   try{
     // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
     // 独自ドメインに変えたら、下の配列にそのドメインを足す。
-    var LIVE_HOSTS = ["roys1105.github.io"];
+    var LIVE_HOSTS = ["roys-senior-it.pages.dev"];
     if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     fetch("https://roy-senior-site-api.roy-s1105.workers.dev/track-page",{
       method:"POST",
@@ -492,7 +501,7 @@ window.name = 'roy-main';
 
 <!-- この講座は Roy's Channel（メインサイト）の入り口から見てもらうものなので、
      「戻る」先と問い合わせ先は、シニア相談室ではなく Roy's Channel にしている。 -->
-<a class="top-link" href="https://roys1105.github.io/roys-channel/" target="roy-main">トップに戻る</a>
+<a class="top-link" href="https://roys-channel.pages.dev/">トップに戻る</a>
 
 <header class="hero">
   <span class="badge">動画で学べるミニ講座</span>
@@ -653,10 +662,10 @@ window.name = 'roy-main';
   <p>まずは予告編から、気になるところだけでもご覧ください。</p>
   <div class="cta-row">
     <a class="btn primary" href="#ep0">今すぐ視聴する</a>
-    <a class="btn secondary" href="https://roys1105.github.io/roys-channel/#contact" target="roy-main">個別に相談してみる</a>
+    <a class="btn secondary" href="https://roys-channel.pages.dev/#contact">個別に相談してみる</a>
   </div>
   <p class="note">※本講座は現在無料で公開中です。正式版（教材）は今後の販売を予定しています。</p>
-  <a class="back" href="https://roys1105.github.io/roys-channel/" target="roy-main">トップページに戻る</a>
+  <a class="back" href="https://roys-channel.pages.dev/">トップページに戻る</a>
 </footer>
 
 <script>

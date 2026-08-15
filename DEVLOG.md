@@ -5,6 +5,63 @@
 
 ---
 
+## 2026-08-15（土）その3 — 公開先を Cloudflare Pages に一本化する準備（**まだ push していない**）
+
+### やったこと
+- **方針**（ロイさんの裁定）：2つのサイトは**別々のサイト**として公開し、相互リンクで繋ぐ。
+  公開は **Cloudflare Pages**、**GitHub は履歴の保管用**。
+  - シニア相談室 … `https://roys-senior-it.pages.dev`（作成ずみ・GitHub連携あり）
+  - Roy's Channel … `https://roys-channel.pages.dev`（作成ずみ・GitHub連携あり）
+- **【追記】シニアのプロジェクトを `roys-senior-it-git` → `roys-senior-it` に作り直した**（ロイさん・2026-08-15）。
+  **Cloudflare Pages はプロジェクト名（＝URL）をあとから変えられない**ので、作り直すしかない。
+  これに伴い、`roys-senior-it-git.pages.dev` を**10ファイルすべて置換した**（HTML 8・DEVLOG 2）。
+- **6ファイルを直した**（`index.html` / `tokushoho.html` / `material/` の3ページ /
+  `nouikiiki/index.html` / `nouikiiki-plus/index.html`）。
+  - **旧住所からの転送**を各ページの `<head>` 先頭に追加。`roys1105.github.io` で開かれたときだけ、
+    `/roys-senior-it/` を取り除いて `roys-senior-it.pages.dev` の同じ場所へ飛ばす。
+  - **`LIVE_HOSTS` を `["roys-senior-it.pages.dev"]` に変更**（5か所）。
+    今まで `roys1105.github.io` 固定だったので、**pages.dev のアクセスが1件も数えられていなかった**。
+  - **`LIVE_VISIT_PAGES` に `'/'` と `'/index.html'` を追加**（`index.html` のバンドル内）。
+    トップページは `location.pathname` を記録しており、pages.dev では `/roys-senior-it/` ではなく **`/`** になる。
+    **古い値も残してある**ので、これまでに溜まった数も引き続き合計される。
+  - **タブの「名札」（`window.name`）を全ページで廃止**、Roy's Channel へのリンク4本から
+    `target="roy-main"` を外した。行き先も `roys-channel.pages.dev` に変更。
+  - **`tokushoho.html` の「どちらから来たか」判定を書き換えた。**
+    別ドメインでは referrer の**パスが読めない**（ホスト名まで）ため、
+    `?src=main` / `?src=senior` の印を主、**referrer のホスト名に `roys-channel` を含むか**を予備にした。
+  - 各ページに `<link rel="canonical">`（新住所）を追加。
+
+### わかったこと・つまずいたこと
+- **`index.html` はバンドル形式**（1行に丸ごとエスケープされた HTML が入っている・412行目付近）。
+  直すときは `\n` や `\"` を含んだ**そのままの文字列**を探して置換する。
+  - **バンドルは展開時に `<head>` を差し替える。** 外側の `<head>` に置いた canonical は消える。
+    → **canonical は内側（テンプレート文字列の中）に入れないと効かない**（実際に消えるのを確認して入れ直した）。
+  - 転送スクリプトは**外側**でよい（展開より先に走るため、むしろ外側が正しい）。
+- **1つのリポジトリが2か所に出る**（GitHub Pages と Cloudflare Pages）。
+  転送も LIVE_HOSTS も「今どっちのホストか」を見て書くこと。
+- **脳いきいき手帳（`nouikiiki/` `nouikiiki-plus/`）にも転送を入れた**（ロイさんの裁定・住所を一本化）。
+  - 記録は `localStorage` にあり、**localStorage はドメインごとに別物**。
+    旧住所で使っていた方は、転送後は**記録が空から始まる**（消えたのではなく、別の引き出しになる）。
+    引き継ぐ手段は無い（ドメインをまたいで読めないため）。承知のうえでの一本化。
+  - **サービスワーカーは HTML を「ネット優先」で取りに行く作り**（`sw.js` 43〜50行目）。
+    そのため、**アプリを入れている人にも次にオンラインで開いた時点で転送が届く。**
+    もしキャッシュ優先だったら永遠に届かなかった。ここは確認して確定した。
+
+### 次にやること
+1. ~~Cloudflare で Pages プロジェクト `roys-channel` を作る~~ → **ロイさんが作成ずみ**（GitHub連携あり）。
+2. **両リポジトリを push する**（ロイさんの合図待ち）。
+3. 公開後にライブで確認：転送・相互リンク往復・特商法の「戻る」先・**訪問数がまた数え始めるか**・
+   脳いきいき手帳が新住所で開くか。
+
+### 動作確認
+- ローカル静的サーバで4ページを開いて確認：
+  - トップ … バンドルが正常に展開、Roy's Channel ボタンは `https://roys-channel.pages.dev/`・target なし
+  - `tokushoho.html?src=main` … 「戻る」先が `https://roys-channel.pages.dev/`、`window.name` は空
+  - 講座ページ … Roy's Channel へのリンク3本すべて新URL・target なし、canonical 正
+  - スマホ教室 … canonical 正、特商法リンクは `../tokushoho.html?src=senior` のまま（正しい）
+  - 脳いきいき手帳（無料版・プラス版）… どちらも正常に起動、読み込むファイルは全部 200、canonical 正
+- **ライブでの確認は未実施**（push 前）。
+
 ## 2026-08-15（土）その2
 
 ### やったこと

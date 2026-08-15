@@ -4,35 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>特定商取引法に基づく表記 | Roy's Channel</title>
+<link rel="canonical" href="https://roys-senior-it.pages.dev/tokushoho.html">
+<script>
+/* --- 旧住所（GitHub Pages）で開かれたら、新しい住所へ送る ---
+   公開先は Cloudflare Pages（roys-senior-it.pages.dev）。
+   ※転送をやめたいときは、この <script> ブロックごと消す。 */
+(function () {
+  try {
+    if (location.hostname === 'roys1105.github.io') {
+      var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '');
+      location.replace('https://roys-senior-it.pages.dev/' + rest + location.search + location.hash);
+    }
+  } catch (e) {}
+})();
+</script>
 <script>
 // このページは Roy's Channel とシニア相談室の**両方**からリンクされている。
-// そこで「どちらから来たか」を見て、タブの名札と「戻る」先を変える。
+// そこで「どちらから来たか」を見て、「戻る」先を変える。
 (function () {
   try {
     // どちらから来たかの判断は2段構え。
-    //  1) アドレスの「?src=main」… Roy's Channel 側のリンクに付けてある。いちばん確実。
+    //  1) アドレスの「?src=main」／「?src=senior」… 両サイトのリンクに付けてある。いちばん確実。
     //  2) 1つ前に見ていたページ（referrer）… 上が無いときの予備。
-    //     2つのサイトは同じ roys1105.github.io なので、パスまで読める。
+    //     2つのサイトは別ドメインになったので、**パスは読めず、ホスト名までしか分からない**。
+    //     そのため「roys-channel」というホスト名で見分ける。
+    //     （旧住所 roys1105.github.io から来た場合はパスが読めないので、印の無いときは
+    //       これまでどおりシニア相談室に戻す。印が付いていれば正しく判断できる）
     var src = '';
     try { src = new URLSearchParams(location.search).get('src') || ''; } catch (e) {}
-    var fromMain = (src === 'main') || document.referrer.indexOf('/roys-channel/') >= 0;
-
-    // 来た方向がはっきりしているときは、タブの名札もそれに合わせる。
-    // （メインから来たのにタブが「シニア」のままだと、次の行き先を間違えるため）
-    var fromSenior = (src === 'senior') ||
-      (document.referrer.indexOf('/roys-senior-it/') >= 0 && document.referrer.indexOf('tokushoho') < 0);
-    if (fromMain) {
-      window.name = 'roy-main';
-    } else if (fromSenior || !window.name) {
-      window.name = 'roy-senior';
-    }
+    var refHost = '';
+    try { refHost = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
+    var fromMain = (src === 'main') || refHost.indexOf('roys-channel') >= 0;
 
     // 「戻る」先を、来た方向に合わせて差し替える。
     // 何も分からないときは、これまでどおりシニア相談室のトップに戻す。
     if (fromMain) {
       document.addEventListener('DOMContentLoaded', function () {
         var back = document.querySelector('a.back');
-        if (back) { back.setAttribute('href', 'https://roys1105.github.io/roys-channel/'); }
+        if (back) { back.setAttribute('href', 'https://roys-channel.pages.dev/'); }
       });
     }
   } catch (e) {}
@@ -43,7 +52,7 @@
   try{
     // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
     // 独自ドメインに変えたら、下の配列にそのドメインを足す。
-    var LIVE_HOSTS = ["roys1105.github.io"];
+    var LIVE_HOSTS = ["roys-senior-it.pages.dev"];
     if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     // ロイさん本人のアクセスは数えない。
     // 一度だけ末尾に ?roy=1 を付けて開けば、その端末では以後ずっと数えない。
