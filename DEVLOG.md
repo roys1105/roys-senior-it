@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-08-19（水）— 「こんな記事・動画があります」card-6 の見出しを「暮らしの話」に変更
+
+### やったこと
+- `index.html`（バンドル形式）の `contentCards` の `card-6` の title を
+  `暮らしとお金の話` → `暮らしの話` に変更（1文字列の置換のみ）。
+- 変更前に `_backups/index_backup_before_card6title_20260819.html` を作成。
+
+### わかったこと・つまずいたこと
+- 05-html-editing.md の手順どおり、テンプレートJSONを json.loads → 置換 → json.dumps →
+  `</` を `<\/` に戻す、で実施。CRLF維持のため `newline=''`。git diff は index.html が 1行のみ。
+- `material/worker.js` にコミットされていない差分（495行）が残っている。今回の変更とは無関係。
+  push するときに巻き込まないよう、index.html だけをコミットすること。
+- 2026-08-18 の DEVLOG には「未push」とあるが、実際は origin/main と同期ずみ（0/0）だった。
+
+### 次にやること
+- 公開（`git commit` → `git push origin main`）はロイさんの合図待ち。
+- `material/worker.js` の未コミット差分の扱いを決める。
+
+### 動作確認
+- ローカル（`http://localhost:8765/senior-site/index.html`）で、展開後のDOMに「暮らしの話」が
+  表示され、「暮らしとお金の話」が消えていることをJSで確認ずみ。
+- **ライブでの確認は未実施（未コミット・未push）。**
+
+---
+
 ## 2026-08-18（火）— プロフィール欄の訪問数・視聴回数の表示を停止／note読者の声を削除／紹介文を拡充
 
 ### やったこと
