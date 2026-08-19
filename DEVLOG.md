@@ -26,7 +26,9 @@
 ### 動作確認
 - ローカル（`http://localhost:8765/senior-site/index.html`）で、展開後のDOMに「暮らしの話」が
   表示され、「暮らしとお金の話」が消えていることをJSで確認ずみ。
-- **ライブでの確認は未実施（未コミット・未push）。**
+- 公開ずみ（commit 9656277 → push → Cloudflare Pages 自動ビルド）。
+- ライブ `https://roys-senior-it.pages.dev/` を `curl -sL` で確認し、「暮らしの話」に
+  置き換わっていることを確認ずみ（反映まで約30秒）。
 
 ---
 
