@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>特定商取引法に基づく表記 | Roy's Channel</title>
 <!-- Cloudflare Pages は .html を落とした形（/tokushoho）で配るので、canonical もその形に合わせる -->
-<link rel="canonical" href="https://roys-senior-it.pages.dev/tokushoho">
+<link rel="canonical" href="https://it.royschannel.com/tokushoho">
 <script>
 /* --- 旧住所（GitHub Pages）で開かれたら、新しい住所へ送る ---
-   公開先は Cloudflare Pages（roys-senior-it.pages.dev）。
+   公開先は Cloudflare Pages（it.royschannel.com）。
    ※転送をやめたいときは、この <script> ブロックごと消す。 */
 (function () {
   try {
     if (location.hostname === 'roys1105.github.io') {
       var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '');
-      location.replace('https://roys-senior-it.pages.dev/' + rest + location.search + location.hash);
+      location.replace('https://it.royschannel.com/' + rest + location.search + location.hash);
     }
   } catch (e) {}
 })();
@@ -42,7 +42,7 @@
     if (fromMain) {
       document.addEventListener('DOMContentLoaded', function () {
         var back = document.querySelector('a.back');
-        if (back) { back.setAttribute('href', 'https://roys-channel.pages.dev/'); }
+        if (back) { back.setAttribute('href', 'https://royschannel.com/'); }
       });
     }
   } catch (e) {}
@@ -53,7 +53,7 @@
   try{
     // 数えるのは本物のライブサイトだけ（手元での動作確認は数えない）。
     // 独自ドメインに変えたら、下の配列にそのドメインを足す。
-    var LIVE_HOSTS = ["roys-senior-it.pages.dev"];
+    var LIVE_HOSTS = ["it.royschannel.com", "roys-senior-it.pages.dev"];
     if (LIVE_HOSTS.indexOf(location.hostname) < 0) return;
     // ロイさん本人のアクセスは数えない。
     // 一度だけ末尾に ?roy=1 を付けて開けば、その端末では以後ずっと数えない。
