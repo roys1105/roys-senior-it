@@ -16,8 +16,8 @@
    ※タブの「名札」（window.name）は廃止した。別ドメインをまたぐと消えるため。 */
 (function () {
   try {
-    if (location.hostname === 'roys1105.github.io') {
-      var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '');
+    if (['roys1105.github.io', 'roys-senior-it.pages.dev'].indexOf(location.hostname) >= 0) {
+      var rest = location.pathname.replace(/^\/roys-senior-it\/?/, '').replace(/^\//, '');
       location.replace('https://it.royschannel.com/' + rest + location.search + location.hash);
     }
   } catch (e) {}
