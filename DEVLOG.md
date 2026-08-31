@@ -5,6 +5,56 @@
 
 ---
 
+## 2026-08-31（日）その4 — 旧 pages.dev から新ドメインへの転送を有効化（移行の2段目）
+
+### やったこと
+- 7ファイルの転送スクリプトを2箇所ずつ変更（commit `8a94629`・push ずみ）。
+  - hostname の判定を配列に拡張：`['roys1105.github.io', 'roys-senior-it.pages.dev']`
+  - `rest` の先頭の `/` を落とす `.replace(/^\//, '')` を追加（下記のバグ対応）
+- これで `roys-senior-it.pages.dev` を開いた人も `it.royschannel.com` へ送られる。
+- `material/worker.js` の未コミット差分は今回も含めていない。
+
+### わかったこと・つまずいたこと
+- **★適用前に机上検算をしてバグを見つけた。** 転送先を組み立てる行は
+  `location.pathname.replace(/^\/roys-senior-it\/?/, '')` で旧 GitHub Pages の接頭辞を
+  剥がしていた。**pages.dev には接頭辞が無いので剥がれず、`rest` の先頭に "/" が残る。**
+  結果 `'https://it.royschannel.com/' + '/tokushoho.html'` で **`//` になっていた**。
+  7ケースを机上で並べたら **4件が不正URL**。`.replace(/^\//, '')` を後ろに足して解決。
+  → **転送の書き換えは、必ず全パスのパターンを並べて検算してから適用する。**
+- **ホスト名の囲みは絶対に外さない。** 外すと新ドメイン上でも転送が走り、無限ループになる。
+  適用前に、各ホスト名で判定がどうなるかを一覧にして確認した
+  （新ドメイン・localhost は「転送しない」／旧2ホストのみ「転送する」）。
+- senior-site のファイルには `indexOf(location.hostname)` が**2箇所**出る。
+  1つは転送の判定、もう1つはアクセス計測の `LIVE_HOSTS.indexOf(...)`。別物なので混同しない。
+- **★`roys-channel/bt-kyoushitsu.html` と `bt-apply-admin.html` には、
+  転送スクリプトも canonical も入っていない**（以前から）。
+  そのため旧URL `roys-channel.pages.dev/bt-kyoushitsu` は**新ドメインへ転送されない**
+  （実測で確認）。旧URLのままでもフォームは動く（WorkerのCORSは `*`）が、住所は一本化されていない。
+  `site-kit/references/01-architecture.md` の「全ページの `<head>` の先頭に」という記述は
+  この2ページについては正しくない。**未対応。**
+
+### 次にやること
+- favicon（正方形画像の用意から）
+- 教材ページ・特商法ページにも OGP を入れるか検討
+- `material/worker.js` の未コミット差分493行の扱いを決める（2026-08-19 から積み残し）
+
+### 動作確認
+- ローカルで、各ホスト名の判定を一覧にして確認。
+  `it.royschannel.com`・localhost は「転送しない」／旧2ホストのみ「転送する」。
+- **ライブ確認ずみ（ブラウザで実測）。**
+  - `https://it.royschannel.com/` … 転送されず正常表示（無限ループなし・画像16枚・壊れ0件）
+  - `https://roys-senior-it.pages.dev/` → `https://it.royschannel.com/` … **`//` なし**
+  - `https://roys-senior-it.pages.dev/tokushoho.html` → `https://it.royschannel.com/tokushoho`
+    … パスが引き継がれ **`//` なし**、特商法の本文も表示
+  - `https://roys-senior-it.pages.dev/?from=test-domain-2026`
+    → `https://it.royschannel.com/?from=test-domain-2026` … **クエリ文字列が保持される**
+    （アクセス計測の `?from=` が失われない）
+- **PWA（`/nouikiiki/`）の転送はブラウザで実測できていない。**
+  途中から `roys-senior-it.pages.dev` へのアクセスがブラウザ側で拒否されたため。
+  同一ホストの `/` と `/tokushoho.html` は実測ずみで、コードは同一・机上検算でも正しい。
+  気になるならロイさんの手元で `https://roys-senior-it.pages.dev/nouikiiki/` を開いて確認。
+- push から反映まで約10秒。
+
 ## 2026-08-31（日）その3 — 説明文とOGPを追加（SNSでリンクを貼ったときの見え方）
 
 ### やったこと
