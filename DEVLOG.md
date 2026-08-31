@@ -5,6 +5,60 @@
 
 ---
 
+## 2026-08-31（日）— 独自ドメイン it.royschannel.com へ移行（内部URLの書き換え・公開ずみ）
+
+### やったこと
+- Pages プロジェクト `roys-senior-it` に `it.royschannel.com` をカスタムドメインとして追加
+  （アクティブ・SSL有効）。サブドメインを `it.` にしたのはロイさんの裁定
+  （シニアの方に口頭・電話で伝える場面があるので一番短いもの）。
+- 7ファイルの旧URLを書き換え（commit `88b07ee`・push ずみ）。
+  - `index.html`（**バンドル形式**・外側4箇所＋内側の canonical と Roy's Channel へのリンク）
+  - `tokushoho.html`（canonical・転送先・`?src=main` の戻り先・`LIVE_HOSTS`）
+  - `material/hajimete-no-sumaho-kyoshitsu.html`・`material/inaka-hitori-kasegu.html`・
+    `material/nouikiiki-tebo.html`
+  - `nouikiiki/index.html`・`nouikiiki-plus/index.html`
+- **`material/worker.js` の未コミット差分493行は、今回もステージしていない**（意図どおり保留）。
+- 書き換えは `dev/tool/domain-migration/migrate_domain.py` で実施。バンドル形式は
+  書き戻したあと `json.loads` の往復一致を検査している。
+
+### わかったこと・つまずいたこと
+- **`LIVE_HOSTS` を見落とすと訪問数が0になる。** 5ファイルに `var LIVE_HOSTS = [...]` があり、
+  ここに載っているホスト名でしか計測しない。**新旧の両方を入れた**
+  （旧 pages.dev も開けたままなので、片方だけだと取りこぼす）。
+- **`LIVE_VISIT_PAGES`（数える側）は直す必要が無かった。** 「2か所とも直す」と記録されていたので
+  確認したが、中身は**パスの配列**でホスト名を含まない。新ドメインでもトップのパスは `/` のまま
+  （送る側は `page: location.pathname || "/"`）。
+- **旧 pages.dev → 新ドメインの転送は、あえて別の段（2段目）にした。** 1回のpushで一緒に入れると、
+  独自ドメインの設定が効いていなかったときに旧URLも新URLも両方開けなくなる。
+- **このファイル（DEVLOG.md）は改行コードが混在している**（LFが主・CRLFが2箇所）。
+  書き足すときは主たる LF に合わせる。CRLF で足すと差分が汚れる。
+- Cloudflare の画面の文言が変わっていた：「Add a domain」→「サイトを追加」→「**ドメインを接続**」。
+  お名前.com も「ドメイン」ではなく「**ネームサーバー / DNS**」メニューの下だった。
+- **Pages プロジェクトはドメイン画面の検索窓では出てこない。** 左上のロゴでアカウントホームに
+  戻り「Workers」の「>」から。`wrangler` に `pages domain` サブコマンドは無い（4.123.0）。
+- お名前.com 由来の **NSレコード22件**（各サブドメインを `*.onamae.com` に委任）がスキャンで
+  見つかったので削除した。`it` の委任が残っていると `it.royschannel.com` が使えなくなる。
+- 脳いきいき手帳（PWA）の保存データは `localStorage` にあり、**旧URLで入力したぶんは
+  新URLでは見えない**。ロイさん承知のうえで移行（テスト公開中のため実害小）。
+
+### 次にやること
+- 旧 `pages.dev` から新ドメインへの転送を有効化（`migrate_domain.py --stage 2 --apply` → push）
+- `www.royschannel.com` → apex への Redirect Rule を Cloudflare で1本
+- note・YouTube固定コメントに貼った旧URLの差し替え（手作業。該当：
+  `YouTube固定コメント_2026-08-23.md`・`第1クール_出す準備_2026-08-23.md`・`note放出計画.md`）
+- ブラウザのタブ名が空（バンドル展開後に `<title>` が無い）。別作業として着手ずみ。
+
+### 動作確認
+- ローカル（`http://localhost:8765/senior-site/index.html`）… **バンドルは壊れていない。**
+  展開後の canonical が `it.royschannel.com`、見出し「シニアの毎日を、もっとラクに、
+  もっと楽しく。」も本文も正常表示、画像16枚すべて200。
+  コンソールの404は `.image-slots.state.json`（バンドラーの作業用ファイル・以前から）。
+- **ライブ確認ずみ。** `curl -sL` で `it.royschannel.com` のトップ・特商法・教材3ページ・
+  PWA2本の計7URLすべて HTTP 200。残る `pages.dev` 1件は `LIVE_HOSTS` の意図的な旧ホスト。
+- 旧 `https://roys-senior-it.pages.dev/` も HTTP 200 で開ける（2段目の前なので正常）。
+- push から反映まで約15秒。
+
+
 ## 2026-08-19（水）— 「こんな記事・動画があります」card-6 の見出しを「暮らしの話」に変更
 
 ### やったこと
