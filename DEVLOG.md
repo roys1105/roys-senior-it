@@ -5,6 +5,63 @@
 
 ---
 
+## 2026-08-31（日）その3 — 説明文とOGPを追加（SNSでリンクを貼ったときの見え方）
+
+### やったこと
+- トップページに13本の meta を追加（`index.html`）。
+  - `description` … 検索結果の説明文
+  - `og:title` / `og:description` / `og:type` / `og:url` / `og:site_name` / `og:locale`
+  - `og:image` … `https://it.royschannel.com/image/hero-bg.jpg`（2200×1041・瀬戸内の夕景）
+    ＋ `og:image:width` / `height` / `alt`
+  - `twitter:card` = `summary_large_image`
+  - `viewport` … 外側に無かったので同時に追加
+- **内側と外側の両方に入れている**（理由は下記）。commit は2本。
+  - `3f9ff9a` … 内側のみ（★これだけでは効いていなかった）
+  - `e76c358` … 外側にも追加（これで効いた）
+- 変更前に `_backups/index_backup_before_ogp_20260831.html` を作成。
+
+### わかったこと・つまずいたこと
+- **★最初に間違えた。内側だけに入れて commit・push まで済ませたが、SNSには1件も効いていなかった。**
+  **LINE・X・Facebook のクローラはJavaScriptを実行しない。** バンドルを展開しないので、
+  内側のメタタグは見えない。生HTMLで数えたら `og:image` が **0件**だった。
+  → **OGPと description は「外側」に置く。**
+- **タブ名（`<title>`）とは事情が違う。** ブラウザはJSを実行するので内側でよい。
+  **置き場所は「それを読むのは誰か」で決める。**
+  - ブラウザが読む（タブ名・canonical）→ 内側
+  - SNSのクローラが読む（OGP・description）→ **外側**
+  この判断基準を `site-kit/references/05-html-editing.md` の置き場所の表に追記した。
+- **内側と外側の両方に置いても重複しない。** 展開時に外側の `<head>` ごと差し替わるため、
+  最終DOMには内側のぶんだけが残る（全項目1件であることを確認）。
+- **`og:image` と `og:url` は絶対URLで書く。** 相対パスだとクローラが拾えない。
+  （参考：`roys-channel/index.html` の `og:image` は `image/roy-chara-side.jpg` と
+  **相対パスのまま**。同じ問題を抱えている可能性がある。未対応。）
+- 確認は生HTMLで行う。バンドル部分を除いて数えないと「内側にあるだけ」を見落とす
+  （実際に見落とした）。手順は 05-html-editing.md に載せた。
+- OGP用の正方形/1.91:1 の専用画像は無いので、既存の `hero-bg.jpg` を流用した。
+  比率は 2.11:1 で推奨の 1.91:1 より少し横長。SNS側で軽く上下が切られる。
+- **favicon（タブのアイコン）も内側・外側とも入っていない。** `senior-site/image/` に
+  正方形の画像が無い（`site-logo.png` は 900×203、`kuro/kuro.png` は 620×880）。
+  足すなら正方形の画像を用意する必要がある。未対応。
+
+### 次にやること
+- favicon（`rel="icon"` / `apple-touch-icon`）… 正方形画像の用意から
+- `roys-channel/index.html` の `og:image` を絶対URLに直す（相対パスのまま）
+- 教材ページ・特商法ページにも OGP を入れるか検討（今回はトップのみ）
+- 旧 `pages.dev` から新ドメインへの転送（ドメイン移行の2段目）。dry-run ずみ
+
+### 動作確認
+- ローカル（`http://localhost:8765/senior-site/index.html`）… 展開後のDOMで
+  `description`・`og:title`・`og:image`・`viewport`・`title`・`canonical` が**すべて1件**
+  （重複なし）。h1・画像16枚も正常、壊れた画像0件。
+- **ライブ確認ずみ。** `curl -sL "https://it.royschannel.com/"` の生HTMLから
+  バンドル部分を除いて数え、**12本のメタタグすべてが出ていることを確認**
+  （＝クローラから見える状態）。
+- `og:image` の実物も確認：`Content-Type: image/jpeg` / `Content-Length: 261201`
+  （ローカルのファイルサイズと完全一致）。
+- push から反映まで約20秒。
+- **SNSでの実際のカード表示は未確認**（LINE・X に貼っての目視はしていない）。
+
+
 ## 2026-08-31（日）その2 — ブラウザのタブ名を設定（空だったのを直した）
 
 ### やったこと
