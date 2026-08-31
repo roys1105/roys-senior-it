@@ -5,6 +5,47 @@
 
 ---
 
+## 2026-08-31（日）その2 — ブラウザのタブ名を設定（空だったのを直した）
+
+### やったこと
+- タブ名を「**うどん県発！ITシニアなんでも相談室**」に設定（文面はロイさんが決定）。
+  短い形を選んだ理由：検索結果で切れない。Roy's Channel 側は
+  `Roy's Channel｜好きなことを、好きなだけ。うどん県から。`。
+- `index.html`（バンドル形式）の2箇所を変更（commit `b54260a`・push ずみ）。
+  - **内側**（展開後の `<head>`）… `<link rel="canonical">` の直後に `<title>` を追加
+  - **外側**の `<title>Bundled Page</title>` … 同じ文面に変更
+- 変更前に `_backups/index_backup_before_title_20260831.html`（163,299バイト）を作成。
+
+### わかったこと・つまずいたこと
+- **空タブの原因は「内側に `<title>` が無かった」こと。** バンドルは展開時に `<head>` ごと
+  差し替えるので、外側に `<title>Bundled Page</title>` があっても消える。結果 `document.title`
+  が空文字になり、タブとブックマークにURLがそのまま出ていた。
+  内側の `<head>` は `charset` → `viewport` → `canonical` の3つだけだった。
+- **`<title>` は canonical と同じ「内側」に置く。** 外側に置いても展開で消える
+  （→ `site-kit/references/05-html-editing.md` の置き場所の表）。
+- 外側も直す理由：展開されるまでの一瞬と、JSが動かない環境のため。
+- 手順は `json.loads` → 置換 → `json.dumps` → `</` を `<\/` に戻す → `io.open(newline='')` で
+  書き戻し → **読み直して往復一致を検査**。差分は**2行だけ**（外側1行＋バンドル1行）。
+  数十行出たら改行が壊れているのでバックアップから戻す。
+- 展開後の文字数は 33,591 → 33,625（+34字＝改行1＋`<title>`7＋題名18＋`</title>`8。計算と一致）。
+
+### 次にやること
+- 内側の `<head>` には `<meta name="description">` と OGP（`og:title`・`og:description`・
+  `og:image`）も**入っていない**。SNSでリンクを貼ったときの見え方に影響する。
+  同じ手順で足せるので、別の機会に検討する。
+- 旧 `pages.dev` から新ドメインへの転送（ドメイン移行の2段目）。
+  `dev/tool/domain-migration/migrate_domain.py --stage 2 --apply` で実施。dry-run ずみ。
+
+### 動作確認
+- ローカル（`http://localhost:8765/senior-site/index.html`）… `document.title` が
+  「うどん県発！ITシニアなんでも相談室」、`<title>` タグは**1つだけ**（重複なし）、
+  canonical・h1・画像16枚すべて正常、壊れた画像0件。
+- **ライブ確認ずみ。** `curl -sL "https://it.royschannel.com/"` で外側の `<title>` を確認。
+  さらにブラウザで開いて**展開後**の `document.title` も同じ文面になっていることを確認
+  （`titleTags=1`・壊れた画像0件・canonical は `it.royschannel.com`）。
+- push から反映まで約30秒。
+
+
 ## 2026-08-31（日）— 独自ドメイン it.royschannel.com へ移行（内部URLの書き換え・公開ずみ）
 
 ### やったこと
