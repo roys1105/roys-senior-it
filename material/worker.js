@@ -34,6 +34,12 @@ function todayJST() {
   return jst.toISOString().slice(0, 10);
 }
 
+// お問い合わせフォームの送信元アドレス。
+// Resend で royschannel.com を認証ずみ(2026-09-02)なので、独自ドメインで送れる。
+// ★2サイト(Roy's Channel / ITシニアなんでも相談室)とも、この1つのアドレスから送る。
+//   どちらから来たかは件名と本文で見分ける。
+const CONTACT_MAIL_FROM = "otoiawase@royschannel.com";
+
 async function handleContact(request, env) {
   let body;
   try {
@@ -60,7 +66,7 @@ async function handleContact(request, env) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Roy's Channel お問い合わせフォーム <onboarding@resend.dev>",
+      from: `Roy's Channel お問い合わせフォーム <${CONTACT_MAIL_FROM}>`,
       to: ["roy.s1105@gmail.com"],
       reply_to: email,
       subject: `【HPお問い合わせ】${name} 様より`,
