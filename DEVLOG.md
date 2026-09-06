@@ -32,7 +32,11 @@
 ### 動作確認
 - 削除したファイルが `git status` で D として並ぶことを確認
 - `_redirects` にCRが含まれていないことを確認
-- **ライブでの301の確認は push 後**（`curl -sI https://it.royschannel.com/material/inaka-hitori-kasegu`）
+- **ライブでも301を確認ずみ**
+  - `/material/inaka-hitori-kasegu` → 301 → `https://royschannel.com/kouza/inaka-hitori-kasegu`
+  - `.html` 付きの旧URLも 301 で同じ先へ
+  - `/videos/kouza_ep0.mp4` → 301 → `https://royschannel.com/videos/kouza_ep0.mp4`
+  - このサイトのトップと、残した教材ページ（はじめてのスマホ教室）は 200 のまま
 
 ## 2026-09-03（木）— お問い合わせフォームの送信元を独自ドメインに変更（デプロイ・確認ずみ）
 
