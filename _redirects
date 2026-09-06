@@ -1,0 +1,10 @@
+# Cloudflare Pages の転送表（左＝旧いURL、右＝新しいURL、右端＝ステータス）
+#
+# 2026-09-06：「田舎暮らしのまま、独りで稼ぐ教科書」を、このサイト（it.royschannel.com）から
+# メインサイト royschannel.com/kouza/ へ引っ越した。
+# note などに貼った旧いリンクから来た人を、ここで新しい住所へ送っている（301＝恒久的な引っ越し）。
+# 動画（/videos/kouza_ep*.mp4）も一緒に引っ越したので、まとめて転送する。
+# ※この行を消すと、旧いリンクは 404 になる。消す前に、外に貼ったリンクを確かめること。
+/material/inaka-hitori-kasegu       https://royschannel.com/kouza/inaka-hitori-kasegu  301
+/material/inaka-hitori-kasegu.html  https://royschannel.com/kouza/inaka-hitori-kasegu  301
+/videos/*                           https://royschannel.com/videos/:splat              301

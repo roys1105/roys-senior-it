@@ -1,0 +1,2 @@
+# Cloudflare Pages の転送表は、必ず LF 改行で保存する（CRLF だと転送が効かないことがある）
+_redirects text eol=lf

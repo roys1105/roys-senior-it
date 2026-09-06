@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-09-06（日）— 田舎暮らし講座を royschannel.com へ引き渡し、旧URLは301転送にした
+
+### やったこと
+ロイさんの指示で、**「田舎暮らしのまま、独りで稼ぐ教科書」をこのサイトから外し、
+メインサイト（royschannel.com）へ移した。**
+
+- 削除：`material/inaka-hitori-kasegu.html`、`videos/kouza_ep0〜6.mp4` と同名の `.jpg`（計15ファイル）
+- 追加：**`_redirects`**（Cloudflare Pages の転送表）
+  - `/material/inaka-hitori-kasegu`（`.html` 付きも）→ `https://royschannel.com/kouza/inaka-hitori-kasegu` 301
+  - `/videos/*` → `https://royschannel.com/videos/:splat` 301
+- 追加：`.gitattributes`（`_redirects text eol=lf`）
+- 移した先の作業は `roys-channel/DEVLOG.md` に書いた
+
+### わかったこと・つまずいたこと
+- **`_redirects` はLF改行で保存する。** WindowsのgitはCRLFで取り出す設定なので、
+  `.gitattributes` で固定した（ステージしたものにCRが0件であることを確認）
+- このサイトから講座ページへのリンクは**もともと無かった**（トップから貼っていたのは Roy's Channel 側）。
+  そのため、リンク切れの直しは発生していない
+- **worker.js（バックエンド）はこのリポジトリのまま。** 引っ越したページも、これまでどおり
+  `roy-senior-site-api` に閲覧数を送る（CORSは `*` なので、別ドメインからでも通る）
+
+### 次にやること
+- 特になし
+
+### 動作確認
+- 削除したファイルが `git status` で D として並ぶことを確認
+- `_redirects` にCRが含まれていないことを確認
+- **ライブでの301の確認は push 後**（`curl -sI https://it.royschannel.com/material/inaka-hitori-kasegu`）
+
 ## 2026-09-03（木）— お問い合わせフォームの送信元を独自ドメインに変更（デプロイ・確認ずみ）
 
 ### やったこと
