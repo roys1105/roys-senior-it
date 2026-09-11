@@ -565,6 +565,10 @@ async function handleBtMailFrom(request, env) {
 //   ロイさんへの控えは、管理ページの「CC宛先」に登録してある（D1の olive_cc_recipients）。
 const OLIVE_MAIL_TO = ["nisihara@kagawa-yakult.co.jp"];
 
+// ★申込者あての受付メールに「返信」したときの行き先（協会の事務局）。
+//   OLIVE_MAIL_TO を変えても動かないよう、別に持つ（ロイさんに返信が来ると取り違えが起きるため）。
+const OLIVE_REPLY_TO = "nisihara@kagawa-yakult.co.jp";
+
 // 送信元。Resend で royschannel.com を認証ずみ(2026-09-02)なので、このドメインのアドレスなら送れる。
 // 管理ページから変えられるのも、このドメインのアドレスだけにしている
 // （認証していないアドレスにすると、申込みメールが1通も届かなくなるため）。
@@ -817,7 +821,7 @@ async function handleOliveApply(request, env) {
       const confirmRes = await sendResend(env, {
         from: `香川県バウンドテニス協会 事務局 <${mailFromAddress}>`,
         to: [email],
-        reply_to: OLIVE_MAIL_TO[0],
+        reply_to: OLIVE_REPLY_TO,
         subject: `【第2回オリーブ杯】参加申込みを受け付けました（${teamName}）`,
         text: confirmText,
       });
