@@ -572,14 +572,20 @@ async function handleBtMailFrom(request, env) {
 //   - 案内から3日たっても申し込まなかった方は、キャンセル待ちから外す（本人にメール）。見回りは1時間ごと（cron）。
 //   - 空きが埋まったら、まだ申し込んでいない方の「案内済み」は取り消し、次の空きのときにあらためて案内する。
 
-// ★申込み通知メールの届け先（協会の事務局）。この1行だけ直せば変えられる。
-//   ロイさんへの控えは、管理ページの「CC宛先」に登録する（D1の olive_cc_recipients）。
-const OLIVE_MAIL_TO = ["nisihara@kagawa-yakult.co.jp"];
-
-// ★申込者あてのメールに「返信」したときの行き先（協会の事務局）の、最初の設定。
-//   管理ページの「申込者からの返信先」で変えられる（D1の olive_reply_to。空欄で保存するとこの値に戻る）。
-//   OLIVE_MAIL_TO を変えても動かないよう、別に持つ（ロイさんに返信が来ると取り違えが起きるため）。
-const OLIVE_REPLY_TO = "nisihara@kagawa-yakult.co.jp";
+// ★事務局の情報の「最初の設定」（西原さん）。管理ページの「事務局の情報」で項目ごとに変えられる
+//   （D1の olive_settings。欄を空にして保存すると、その項目はこの値に戻る）。担当の方が替わったら、管理ページで変更する。
+//   notify_to：申込み通知メールの届け先（ロイさんへの控えは、管理ページの「CC宛先」）
+//   reply_to ：申込者からの返信先。メール末尾と申込みページの連絡先の E-mail にもなる
+//              （notify_to とは別に持つ。ロイさんに返信が来ると取り違えが起きるため）
+//   person   ：メール末尾の「香川県バウンドテニス協会 事務局　○○」
+//   tel・fax ：メール末尾と申込みページの連絡先
+const OLIVE_OFFICE_DEFAULTS = {
+  notify_to: "nisihara@kagawa-yakult.co.jp",
+  reply_to: "nisihara@kagawa-yakult.co.jp",
+  person: "西原 敏夫",
+  tel: "0875-73-3458",
+  fax: "0875-73-3457",
+};
 
 // 送信元。Resend で royschannel.com を認証ずみ(2026-09-02)なので、このドメインのアドレスなら送れる。
 // 管理ページから変えられるのも、このドメインのアドレスだけにしている
@@ -603,12 +609,15 @@ const OLIVE_NUMBER_PREFIX = { "香川県内": "県内", "香川県外": "県外"
 // 空きの案内から、申し込みを待つ時間（3日。ロイさんの指示）
 const OLIVE_OFFER_HOURS = 72;
 
-// 協会の連絡先（申込者あてのメールの末尾に載せる）。E-mail は、管理ページで登録した返信先と同じにする
-function oliveOfficeSignature(replyTo) {
+// 協会の連絡先（申込者あてのメールの末尾に載せる）。管理ページの「事務局の情報」の値を使う
+function oliveOfficeSignature(office) {
+  const telFax = [office.tel ? `TEL ${office.tel}` : "", office.fax ? `FAX ${office.fax}` : ""]
+    .filter(Boolean)
+    .join(" ／ ");
   return (
-    `香川県バウンドテニス協会 事務局　西原 敏夫\n` +
-    `TEL 0875-73-3458 ／ FAX 0875-73-3457\n` +
-    `E-mail ${replyTo}\n`
+    `香川県バウンドテニス協会 事務局${office.person ? "　" + office.person : ""}\n` +
+    (telFax ? `${telFax}\n` : ``) +
+    `E-mail ${office.reply_to}\n`
   );
 }
 
@@ -756,31 +765,38 @@ async function getOliveMailFrom(env) {
   return OLIVE_MAIL_FROM_DEFAULT;
 }
 
-// 申込者あてのメールに「返信」したときの行き先。管理ページで登録した値（D1の olive_reply_to）、無ければ OLIVE_REPLY_TO
-async function getOliveReplyTo(env) {
+// 事務局の情報（管理ページで登録した値。登録の無い項目は OLIVE_OFFICE_DEFAULTS）
+async function getOliveOffice(env) {
+  const office = { ...OLIVE_OFFICE_DEFAULTS };
   try {
-    const row = await env.DB.prepare(`SELECT email FROM olive_reply_to WHERE id = 1`).first();
-    if (row && row.email) return row.email;
+    const { results } = await env.DB.prepare(`SELECT key, value FROM olive_settings`).all();
+    for (const r of results || []) {
+      if (r.value && Object.prototype.hasOwnProperty.call(office, r.key)) office[r.key] = r.value;
+    }
   } catch (e) {
-    console.error("d1 select error (olive_reply_to)", e);
+    console.error("d1 select error (olive_settings)", e);
   }
-  return OLIVE_REPLY_TO;
+  return office;
 }
 
-// 申込者からの返信先の取得・変更（管理者用）
-// GET : 現在の値 { email, isDefault } ／ POST {key, email} : 変更（email が空なら最初の設定に戻す）
-async function handleOliveReplyTo(request, env) {
-  const method = request.method;
+// 申込みページに載せる連絡先（キー不要。TEL・FAX・E-mail だけ返す。担当者名や通知の届け先は出さない）
+async function handleOliveContact(env) {
+  const o = await getOliveOffice(env);
+  return json({ ok: true, tel: o.tel, fax: o.fax, email: o.reply_to });
+}
 
-  if (method === "GET") {
+// 事務局の情報の取得・変更（管理者用）
+// GET  : { office（いまの値）, defaults（最初の設定） }
+// POST : {key, office: {notify_to, reply_to, person, tel, fax}} … 空の項目は、最初の設定に戻す
+async function handleOliveOffice(request, env) {
+  if (request.method === "GET") {
     if (!(await checkOliveAdmin(request, env))) {
       return json({ ok: false, error: "not_found" }, 404);
     }
-    const email = await getOliveReplyTo(env);
-    return json({ ok: true, email, isDefault: email === OLIVE_REPLY_TO });
+    return json({ ok: true, office: await getOliveOffice(env), defaults: OLIVE_OFFICE_DEFAULTS });
   }
 
-  if (method === "POST") {
+  if (request.method === "POST") {
     let body;
     try {
       body = await request.json();
@@ -790,26 +806,38 @@ async function handleOliveReplyTo(request, env) {
     if (!(await checkOliveAdmin(request, env, (body.key || "").toString()))) {
       return json({ ok: false, error: "not_found" }, 404);
     }
-    const email = (body.email || "").toString().trim().slice(0, 200);
+    const input = body.office || {};
+    const maxLen = { notify_to: 200, reply_to: 200, person: 40, tel: 30, fax: 30 };
+    const values = {};
+    for (const k of Object.keys(OLIVE_OFFICE_DEFAULTS)) {
+      const v = (input[k] == null ? "" : String(input[k])).trim();
+      if (v.length > maxLen[k] || /[<>]/.test(v)) {
+        return json({ ok: false, error: `invalid_${k}` }, 400);
+      }
+      if ((k === "notify_to" || k === "reply_to") && v && !isValidEmail(v)) {
+        return json({ ok: false, error: `invalid_${k}` }, 400);
+      }
+      values[k] = v;
+    }
+    const now = new Date().toISOString();
     try {
-      if (!email) {
-        await env.DB.prepare(`DELETE FROM olive_reply_to WHERE id = 1`).run();
-      } else {
-        if (!isValidEmail(email)) {
-          return json({ ok: false, error: "invalid_email" }, 400);
+      for (const k of Object.keys(values)) {
+        if (values[k]) {
+          await env.DB.prepare(
+            `INSERT INTO olive_settings (key, value, updated_at) VALUES (?, ?, ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+          )
+            .bind(k, values[k], now)
+            .run();
+        } else {
+          await env.DB.prepare(`DELETE FROM olive_settings WHERE key = ?`).bind(k).run();
         }
-        await env.DB.prepare(
-          `INSERT INTO olive_reply_to (id, email, updated_at) VALUES (1, ?, ?)
-           ON CONFLICT(id) DO UPDATE SET email = excluded.email, updated_at = excluded.updated_at`
-        )
-          .bind(email, new Date().toISOString())
-          .run();
       }
     } catch (e) {
-      console.error("d1 error (olive_reply_to)", e);
+      console.error("d1 error (olive_settings)", e);
       return json({ ok: false, error: "save_failed" }, 500);
     }
-    return json({ ok: true, email: email || OLIVE_REPLY_TO, isDefault: !email });
+    return json({ ok: true, office: await getOliveOffice(env) });
   }
 
   return json({ ok: false, error: "method_not_allowed" }, 405);
@@ -1060,9 +1088,10 @@ async function getOliveCcList(env) {
 async function sendOliveToOffice(env, subject, text, replyTo) {
   const ccList = await getOliveCcList(env);
   const mailFromAddress = await getOliveMailFrom(env);
+  const office = await getOliveOffice(env);
   const mail = {
     from: `第2回オリーブ杯 申込みフォーム <${mailFromAddress}>`,
-    to: OLIVE_MAIL_TO,
+    to: [office.notify_to],
     reply_to: replyTo || undefined,
     subject,
     text,
@@ -1083,21 +1112,21 @@ async function sendOliveToOffice(env, subject, text, replyTo) {
 async function sendOliveToApplicant(env, to, subject, body) {
   try {
     const mailFromAddress = await getOliveMailFrom(env);
-    const replyTo = await getOliveReplyTo(env);
+    const office = await getOliveOffice(env);
     const text =
       body +
       `\n` +
       `このメールにそのまま返信すると、協会の事務局に届きます。\n` +
       `\n` +
       `──\n` +
-      oliveOfficeSignature(replyTo) +
+      oliveOfficeSignature(office) +
       `\n` +
       `※このメールは、申込みフォームから自動でお送りしています。\n` +
       `※お心当たりがない場合は、お手数ですが破棄してください。\n`;
     const res = await sendResend(env, {
       from: `香川県バウンドテニス協会 事務局 <${mailFromAddress}>`,
       to: [to],
-      reply_to: replyTo,
+      reply_to: office.reply_to,
       subject,
       text,
     });
@@ -1902,8 +1931,11 @@ export default {
     if (url.pathname === "/olive-claim" && request.method === "POST") {
       return handleOliveClaimLookup(request, env);
     }
-    if (url.pathname === "/olive-reply-to") {
-      return handleOliveReplyTo(request, env);
+    if (url.pathname === "/olive-office") {
+      return handleOliveOffice(request, env);
+    }
+    if (url.pathname === "/olive-contact" && request.method === "GET") {
+      return handleOliveContact(env);
     }
     if (url.pathname === "/track" && request.method === "POST") {
       return handleTrack(request, env);
