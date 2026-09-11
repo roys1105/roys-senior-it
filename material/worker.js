@@ -5,6 +5,7 @@
 // - /bt-cc-recipients : 申込み通知メールのCC宛先一覧の取得・追加・削除(管理者用・要管理キー)
 // - /bt-admin-key : 管理キーの変更(管理者用・要「現在の」管理キー)
 // - /bt-mail-from : 申込みメールの送信元アドレスの取得・変更(管理者用・要管理キー)
+// - /olive-apply ほか /olive-* : 第2回オリーブ杯（香川県バウンドテニス協会）の申込み受付と管理（bt-* と同じ形・別テーブル）
 // - /track        : 動画の再生をカウント(既存・KV)
 // - /stats        : 動画再生の集計結果を返す(既存・KV)
 // - /track-page    : サイト訪問 / 教材ページ閲覧を日別にD1へ記録(新規)
@@ -554,6 +555,455 @@ async function handleBtMailFrom(request, env) {
   return json({ ok: false, error: "method_not_allowed" }, 405);
 }
 
+// ---- 第2回オリーブ杯バウンドテニス大会 参加申込みフォーム（香川県バウンドテニス協会の依頼） ----
+// ページ: dev/site/roys-channel/olive2-kennai.html（県内用）・olive2-kengai.html（県外用）
+//         管理ページ: olive2-admin.html
+// 教室フォーム（bt-*）とは、テーブル・管理キー・CC宛先・送信元をすべて別に持つ。
+// 協会の方が管理ページで操作しても、教室のほうに影響しないようにするため。
+
+// ★申込み通知メールの届け先（協会の事務局）。この1行だけ直せば変えられる。
+//   ロイさんへの控えは、管理ページの「CC宛先」に登録してある（D1の olive_cc_recipients）。
+const OLIVE_MAIL_TO = ["nisihara@kagawa-yakult.co.jp"];
+
+// 送信元。Resend で royschannel.com を認証ずみ(2026-09-02)なので、このドメインのアドレスなら送れる。
+// 管理ページから変えられるのも、このドメインのアドレスだけにしている
+// （認証していないアドレスにすると、申込みメールが1通も届かなくなるため）。
+const OLIVE_MAIL_FROM_DEFAULT = "olive-uketsuke@royschannel.com";
+const OLIVE_MAIL_FROM_DOMAIN = "@royschannel.com";
+
+// 区分と締切。ページ側の AREA・DEADLINE と必ず同じにすること。
+const OLIVE_AREAS = { "香川県内": "2026-10-23", "香川県外": "2026-11-17" };
+
+// 協会の連絡先（申込者あての受付メールの末尾に載せる）
+const OLIVE_OFFICE_SIGNATURE =
+  `香川県バウンドテニス協会 事務局　西原 敏夫\n` +
+  `TEL 0875-73-3458 ／ FAX 0875-73-3457\n` +
+  `E-mail nisihara@kagawa-yakult.co.jp\n`;
+
+async function getOliveAdminKey(env) {
+  try {
+    const row = await env.DB.prepare(`SELECT key_value FROM olive_admin_key WHERE id = 1`).first();
+    if (row && row.key_value) return row.key_value;
+  } catch (e) {
+    console.error("d1 select error (olive_admin_key)", e);
+  }
+  return env.OLIVE_ADMIN_KEY || "";
+}
+
+// 管理キーは X-Admin-Key ヘッダーだけで受け取る（URLに載せるとログに平文で残るため）
+async function checkOliveAdmin(request, env, keyFromBody) {
+  const key = keyFromBody != null ? keyFromBody : request.headers.get("X-Admin-Key") || "";
+  const effective = await getOliveAdminKey(env);
+  return !!effective && key === effective;
+}
+
+async function getOliveMailFrom(env) {
+  try {
+    const row = await env.DB.prepare(`SELECT email FROM olive_mail_from WHERE id = 1`).first();
+    if (row && row.email) return row.email;
+  } catch (e) {
+    console.error("d1 select error (olive_mail_from)", e);
+  }
+  return OLIVE_MAIL_FROM_DEFAULT;
+}
+
+// "2026-10-23" → "2026年10月23日（金曜日）"
+function fmtJPDate(iso, withWeekday) {
+  const [y, m, d] = iso.split("-").map(Number);
+  let s = `${y}年${m}月${d}日`;
+  if (withWeekday) {
+    const wd = "日月火水木金土"[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+    s += `（${wd}曜日）`;
+  }
+  return s;
+}
+
+async function sendResend(env, payload) {
+  return fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function handleOliveApply(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "invalid_json" }, 400);
+  }
+
+  const s = (v, max) => (v || "").toString().trim().slice(0, max);
+
+  const area = s(body.area, 10);
+  if (!Object.prototype.hasOwnProperty.call(OLIVE_AREAS, area)) {
+    return json({ ok: false, error: "invalid_area" }, 400);
+  }
+  const deadline = OLIVE_AREAS[area];
+
+  const leader = body.leader || {};
+  const leaderKana = s(leader.kana, 100);
+  const leaderName = s(leader.name, 100);
+  const postalCode = s(leader.postalCode, 10); // 任意
+  const address = s(leader.address, 300);
+  const tel = s(leader.tel, 40);
+  const email = s(leader.email, 200); // 任意
+  const teamName = s(body.teamName, 100);
+  const managerNo = parseInt(body.managerNo, 10);
+
+  const rawPlayers = Array.isArray(body.players) ? body.players : [];
+  const players = [1, 2, 3, 4].map((n) => {
+    const p = rawPlayers.find((x) => x && Number(x.no) === n) || {};
+    return {
+      no: n,
+      kana: s(p.kana, 100),
+      name: s(p.name, 100),
+      // No.3・No.4 は申込書のとおり「女」で固定（注1：男子の代わりに女子は可、逆は不可）
+      sex: n <= 2 ? s(p.sex, 2) : "女",
+      club: s(p.club, 100), // 任意
+      note: s(p.note, 500), // 任意
+    };
+  });
+
+  if (!leaderKana || !leaderName || !address || !tel || !teamName) {
+    return json({ ok: false, error: "missing_fields" }, 400);
+  }
+  if (tel.replace(/[^0-9]/g, "").length < 9) {
+    return json({ ok: false, error: "invalid_tel" }, 400);
+  }
+  if (!(managerNo >= 1 && managerNo <= 4)) {
+    return json({ ok: false, error: "invalid_manager" }, 400);
+  }
+  for (const p of players) {
+    if (!p.kana || !p.name) return json({ ok: false, error: "missing_fields" }, 400);
+    if (p.sex !== "男" && p.sex !== "女") return json({ ok: false, error: "invalid_sex" }, 400);
+  }
+
+  // E-mail・郵便番号は任意項目なので、書式がおかしくても申込み自体は止めない。
+  // E-mail が不正な形式のときは、返信先の指定と受付メールだけを省く。
+  const emailOk = !!email && isValidEmail(email);
+  const postalDigits = postalCode.replace(/[^0-9]/g, "");
+  const postalShown = postalDigits.length === 7 ? `${postalDigits.slice(0, 3)}-${postalDigits.slice(3)}` : postalCode;
+  const appliedDate = todayJST();
+  const manager = players[managerNo - 1];
+  const areaLabel = `${area}用`;
+
+  // 通知メールと受付メールで共通の、申込み内容のかたまり
+  const line = `────────────────────────────\n`;
+  const detail =
+    line +
+    `【申込責任者】\n` +
+    `フリガナ　　　： ${leaderKana}\n` +
+    `氏名　　　　　： ${leaderName}\n` +
+    `郵便番号　　　： ${postalShown || "（未入力）"}\n` +
+    `住所　　　　　： ${address}\n` +
+    `TEL又は携帯　 ： ${tel}\n` +
+    `E-mail　　　　： ${email || "（未入力）"}\n` +
+    `\n` +
+    line +
+    `【申込チーム】\n` +
+    `チーム名　　　： ${teamName}\n` +
+    `チーム監督　　： No.${managerNo}　${manager.name}\n` +
+    `\n` +
+    players
+      .map(
+        (p) =>
+          ` No.${p.no}　${p.name}（${p.kana}）${p.no === managerNo ? "　★チーム監督" : ""}\n` +
+          `　　　　性別：${p.sex}　／　所属クラブ名：${p.club || "（未入力）"}\n` +
+          `　　　　備考：${p.note || "（記入なし）"}\n`
+      )
+      .join("\n") +
+    line;
+
+  const text =
+    `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）の参加申込みが届きました。\n` +
+    `\n` +
+    `申込日　　　　： ${fmtJPDate(appliedDate, false)}\n` +
+    `締切　　　　　： ${fmtJPDate(deadline, true)}\n` +
+    `\n` +
+    detail +
+    `\n` +
+    (emailOk ? `※このメールにそのまま返信すると、申込責任者ご本人（${leaderName} 様）に届きます。\n` : ``) +
+    `※申込は先着順です。受付後、参加の可否のお返事をお願いします。\n`;
+
+  const subject = `【第2回オリーブ杯 申込み】${teamName}（${leaderName} 様／${area}）`;
+
+  let ccList = [];
+  try {
+    const { results } = await env.DB.prepare(`SELECT email FROM olive_cc_recipients ORDER BY id ASC`).all();
+    ccList = (results || []).map((r) => r.email);
+  } catch (e) {
+    console.error("d1 select error (olive_cc_recipients)", e);
+  }
+
+  const mailFromAddress = await getOliveMailFrom(env);
+  const notice = {
+    from: `第2回オリーブ杯 申込みフォーム <${mailFromAddress}>`,
+    to: OLIVE_MAIL_TO,
+    reply_to: emailOk ? email : undefined,
+    subject,
+    text,
+  };
+
+  let resendRes = await sendResend(env, { ...notice, cc: ccList.length ? ccList : undefined });
+
+  // CC宛先が原因で送信そのものが拒否されたときは、CCを外して1回だけ送り直す（申込みを取りこぼさないため）
+  if (!resendRes.ok && ccList.length) {
+    const errText = await resendRes.text();
+    console.error("resend error (olive-apply, with cc) — retrying without cc", resendRes.status, errText);
+    resendRes = await sendResend(env, notice);
+  }
+
+  if (!resendRes.ok) {
+    const errText = await resendRes.text();
+    console.error("resend error (olive-apply)", resendRes.status, errText);
+    return json({ ok: false, error: "send_failed" }, 502);
+  }
+
+  // D1へ保存（管理ページの一覧・CSV用）。失敗しても通知メールは届いているので、申込みは成功のまま。
+  try {
+    await env.DB.prepare(
+      `INSERT INTO olive_applications (created_at, area, applied_date, team_name, manager_no, leader_name, leader_kana, postal_code, address, tel, email, players)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        new Date().toISOString(),
+        area,
+        appliedDate,
+        teamName,
+        managerNo,
+        leaderName,
+        leaderKana,
+        postalShown,
+        address,
+        tel,
+        email,
+        JSON.stringify(players)
+      )
+      .run();
+  } catch (e) {
+    console.error("d1 insert error (olive-apply)", e);
+  }
+
+  // 受付メール（申込責任者あて）。E-mail が入っているときだけ。失敗しても申込みは成功のまま。
+  if (emailOk) {
+    try {
+      const confirmText =
+        `${leaderName} 様\n` +
+        `\n` +
+        `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）への\n` +
+        `参加申込みをいただき、ありがとうございます。\n` +
+        `以下の内容で受け付けました。\n` +
+        `\n` +
+        `申込日　　　　： ${fmtJPDate(appliedDate, false)}\n` +
+        `\n` +
+        detail +
+        `\n` +
+        `申込は先着順で受け付けております。\n` +
+        `参加の可否は、あらためてお電話・FAX・E-mail にてお返事いたします。\n` +
+        `\n` +
+        `このメールにそのまま返信すると、協会の事務局に届きます。\n` +
+        `\n` +
+        `──\n` +
+        OLIVE_OFFICE_SIGNATURE +
+        `\n` +
+        `※このメールは、申込みフォームから自動でお送りしています。\n` +
+        `※お心当たりがない場合は、お手数ですが破棄してください。\n`;
+
+      const confirmRes = await sendResend(env, {
+        from: `香川県バウンドテニス協会 事務局 <${mailFromAddress}>`,
+        to: [email],
+        reply_to: OLIVE_MAIL_TO[0],
+        subject: `【第2回オリーブ杯】参加申込みを受け付けました（${teamName}）`,
+        text: confirmText,
+      });
+
+      if (!confirmRes.ok) {
+        const errText = await confirmRes.text();
+        console.error("resend error (olive-apply confirm)", confirmRes.status, errText);
+      }
+    } catch (e) {
+      console.error("confirm mail error (olive-apply)", e);
+    }
+  }
+
+  return json({ ok: true });
+}
+
+// 申込み一覧（管理者用）。キー不一致は404（存在を悟らせない）
+// GET              : 一覧を返す
+// DELETE ?ids=1,2  : 指定したIDを削除する
+async function handleOliveApplications(request, env) {
+  if (!(await checkOliveAdmin(request, env))) {
+    return json({ ok: false, error: "not_found" }, 404);
+  }
+
+  if (request.method === "DELETE") {
+    const url = new URL(request.url);
+    const ids = (url.searchParams.get("ids") || "")
+      .split(",")
+      .map((v) => parseInt(v.trim(), 10))
+      .filter((n) => Number.isInteger(n) && n > 0);
+    if (!ids.length) {
+      return json({ ok: false, error: "missing_ids" }, 400);
+    }
+    try {
+      await env.DB.prepare(`DELETE FROM olive_applications WHERE id IN (${ids.map(() => "?").join(",")})`)
+        .bind(...ids)
+        .run();
+    } catch (e) {
+      console.error("d1 delete error (olive_applications)", e);
+      return json({ ok: false, error: "delete_failed" }, 500);
+    }
+    return json({ ok: true, deleted: ids.length });
+  }
+
+  const { results } = await env.DB.prepare(
+    `SELECT id, created_at, area, applied_date, team_name, manager_no, leader_name, leader_kana, postal_code, address, tel, email, players
+     FROM olive_applications ORDER BY id DESC LIMIT 1000`
+  ).all();
+  return json({ ok: true, results });
+}
+
+// CC宛先の管理（管理者用）
+// GET : 一覧 ／ POST {key, email} : 追加 ／ DELETE ?id= : 削除
+async function handleOliveCcRecipients(request, env) {
+  const method = request.method;
+
+  if (method === "POST") {
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return json({ ok: false, error: "invalid_json" }, 400);
+    }
+    if (!(await checkOliveAdmin(request, env, (body.key || "").toString()))) {
+      return json({ ok: false, error: "not_found" }, 404);
+    }
+    const email = (body.email || "").toString().trim().slice(0, 200);
+    if (!email || !isValidEmail(email)) {
+      return json({ ok: false, error: "invalid_email" }, 400);
+    }
+    try {
+      await env.DB.prepare(
+        `INSERT INTO olive_cc_recipients (email, created_at) VALUES (?, ?) ON CONFLICT(email) DO NOTHING`
+      )
+        .bind(email, new Date().toISOString())
+        .run();
+    } catch (e) {
+      console.error("d1 insert error (olive_cc_recipients)", e);
+      return json({ ok: false, error: "save_failed" }, 500);
+    }
+    return json({ ok: true });
+  }
+
+  if (!(await checkOliveAdmin(request, env))) {
+    return json({ ok: false, error: "not_found" }, 404);
+  }
+
+  if (method === "GET") {
+    const { results } = await env.DB.prepare(
+      `SELECT id, email, created_at FROM olive_cc_recipients ORDER BY id ASC`
+    ).all();
+    return json({ ok: true, results });
+  }
+
+  if (method === "DELETE") {
+    const id = parseInt(new URL(request.url).searchParams.get("id") || "", 10);
+    if (!id) {
+      return json({ ok: false, error: "missing_id" }, 400);
+    }
+    try {
+      await env.DB.prepare(`DELETE FROM olive_cc_recipients WHERE id = ?`).bind(id).run();
+    } catch (e) {
+      console.error("d1 delete error (olive_cc_recipients)", e);
+      return json({ ok: false, error: "delete_failed" }, 500);
+    }
+    return json({ ok: true });
+  }
+
+  return json({ ok: false, error: "method_not_allowed" }, 405);
+}
+
+// 管理キーの変更（管理者用）。POST {currentKey, newKey}
+async function handleOliveAdminKeyChange(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "invalid_json" }, 400);
+  }
+  if (!(await checkOliveAdmin(request, env, (body.currentKey || "").toString()))) {
+    return json({ ok: false, error: "not_found" }, 404);
+  }
+  const newKey = (body.newKey || "").toString().trim();
+  if (newKey.length < 4 || newKey.length > 100) {
+    return json({ ok: false, error: "invalid_new_key" }, 400);
+  }
+  try {
+    await env.DB.prepare(
+      `INSERT INTO olive_admin_key (id, key_value, updated_at) VALUES (1, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET key_value = excluded.key_value, updated_at = excluded.updated_at`
+    )
+      .bind(newKey, new Date().toISOString())
+      .run();
+  } catch (e) {
+    console.error("d1 upsert error (olive_admin_key)", e);
+    return json({ ok: false, error: "save_failed" }, 500);
+  }
+  return json({ ok: true });
+}
+
+// 送信元アドレスの取得・変更（管理者用）。GET : 現在の値 ／ POST {key, email} : 変更
+async function handleOliveMailFrom(request, env) {
+  const method = request.method;
+
+  if (method === "GET") {
+    if (!(await checkOliveAdmin(request, env))) {
+      return json({ ok: false, error: "not_found" }, 404);
+    }
+    const email = await getOliveMailFrom(env);
+    return json({ ok: true, email, isDefault: email === OLIVE_MAIL_FROM_DEFAULT });
+  }
+
+  if (method === "POST") {
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return json({ ok: false, error: "invalid_json" }, 400);
+    }
+    if (!(await checkOliveAdmin(request, env, (body.key || "").toString()))) {
+      return json({ ok: false, error: "not_found" }, 404);
+    }
+    const email = (body.email || "").toString().trim().slice(0, 200);
+    if (!email || !isValidEmail(email)) {
+      return json({ ok: false, error: "invalid_email" }, 400);
+    }
+    if (!email.toLowerCase().endsWith(OLIVE_MAIL_FROM_DOMAIN)) {
+      return json({ ok: false, error: "domain_not_allowed" }, 400);
+    }
+    try {
+      await env.DB.prepare(
+        `INSERT INTO olive_mail_from (id, email, updated_at) VALUES (1, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET email = excluded.email, updated_at = excluded.updated_at`
+      )
+        .bind(email, new Date().toISOString())
+        .run();
+    } catch (e) {
+      console.error("d1 upsert error (olive_mail_from)", e);
+      return json({ ok: false, error: "save_failed" }, 500);
+    }
+    return json({ ok: true });
+  }
+
+  return json({ ok: false, error: "method_not_allowed" }, 405);
+}
+
 async function handleTrack(request, env) {
   let body;
   try {
@@ -682,6 +1132,21 @@ export default {
     }
     if (url.pathname === "/bt-mail-from") {
       return handleBtMailFrom(request, env);
+    }
+    if (url.pathname === "/olive-apply" && request.method === "POST") {
+      return handleOliveApply(request, env);
+    }
+    if (url.pathname === "/olive-applications" && (request.method === "GET" || request.method === "DELETE")) {
+      return handleOliveApplications(request, env);
+    }
+    if (url.pathname === "/olive-cc-recipients") {
+      return handleOliveCcRecipients(request, env);
+    }
+    if (url.pathname === "/olive-admin-key" && request.method === "POST") {
+      return handleOliveAdminKeyChange(request, env);
+    }
+    if (url.pathname === "/olive-mail-from") {
+      return handleOliveMailFrom(request, env);
     }
     if (url.pathname === "/track" && request.method === "POST") {
       return handleTrack(request, env);
