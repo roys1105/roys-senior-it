@@ -576,7 +576,7 @@ const OLIVE_MAIL_FROM_DEFAULT = "olive-uketsuke@royschannel.com";
 const OLIVE_MAIL_FROM_DOMAIN = "@royschannel.com";
 
 // 申込み人数の下限（上限は4名）。ページの「申込み人数」の選択肢と必ず同じにすること。
-const OLIVE_PLAYERS_MIN = 2;
+const OLIVE_PLAYERS_MIN = 1;
 
 // 区分と締切。ページ側の AREA・DEADLINE と必ず同じにすること。
 const OLIVE_AREAS = { "香川県内": "2026-10-23", "香川県外": "2026-11-17" };
@@ -661,7 +661,7 @@ async function handleOliveApply(request, env) {
   const email = s(leader.email, 200); // 任意
   const teamName = s(body.teamName, 100);
   const managerNo = parseInt(body.managerNo, 10);
-  // 申込み人数（2〜4名）。人数の欄が無かった頃の送信（playerCount なし）は4名として扱う
+  // 申込み人数（1〜4名）。人数の欄が無かった頃の送信（playerCount なし）は4名として扱う
   const playerCount = body.playerCount == null ? 4 : parseInt(body.playerCount, 10);
   if (!(playerCount >= OLIVE_PLAYERS_MIN && playerCount <= 4)) {
     return json({ ok: false, error: "invalid_player_count" }, 400);
