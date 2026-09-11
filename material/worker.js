@@ -1612,12 +1612,19 @@ async function handleOliveWaitlist(request, env) {
   }
 
   if (request.method === "DELETE") {
-    const id = parseInt(new URL(request.url).searchParams.get("id") || "", 10);
-    if (!id) {
-      return json({ ok: false, error: "missing_id" }, 400);
+    // ?ids=1,2,3（管理ページで選択した行をまとめて）か、?id=1（1件）
+    const sp = new URL(request.url).searchParams;
+    const ids = (sp.get("ids") || sp.get("id") || "")
+      .split(",")
+      .map((v) => parseInt(v.trim(), 10))
+      .filter((n) => Number.isInteger(n) && n > 0);
+    if (!ids.length) {
+      return json({ ok: false, error: "missing_ids" }, 400);
     }
     try {
-      await env.DB.prepare(`DELETE FROM olive_waitlist WHERE id = ?`).bind(id).run();
+      await env.DB.prepare(`DELETE FROM olive_waitlist WHERE id IN (${ids.map(() => "?").join(",")})`)
+        .bind(...ids)
+        .run();
     } catch (e) {
       console.error("d1 delete error (olive_waitlist)", e);
       return json({ ok: false, error: "delete_failed" }, 500);
