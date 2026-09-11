@@ -560,12 +560,23 @@ async function handleBtMailFrom(request, env) {
 //         管理ページ: olive2-admin.html
 // 教室フォーム（bt-*）とは、テーブル・管理キー・CC宛先・送信元をすべて別に持つ。
 // 協会の方が管理ページで操作しても、教室のほうに影響しないようにするため。
+//
+// 受付組数の上限とキャンセル待ち（2026-09-11 ロイさんの指示）
+//   - 上限は区分ごと（olive_limits）。数えるのは olive_applications の行数。
+//   - 定員に達したら、フォームからキャンセル待ちに登録できる（olive_waitlist・E-mail必須）。
+//     登録すると「キャンセル待ち番号」（例：県内-007）を発行する。
+//   - 空きが出たら（申込みの削除・上限の変更）、その区分のキャンセル待ち全員に「空きが出ました」とメールする。
+//     本人は番号と登録したE-mailで登録内容を呼び出し、必要なら直して申し込む（早い者勝ち）。
+//     申し込んだら、キャンセル待ちの記録は消える。
+//   - キャンセル待ちがいる区分は、空きがあっても、フォームからの通常の申込みは受け付けない（キャンセル待ちの方を優先）。
+//   - 案内から3日たっても申し込まなかった方は、キャンセル待ちから外す（本人にメール）。見回りは1時間ごと（cron）。
+//   - 空きが埋まったら、まだ申し込んでいない方の「案内済み」は取り消し、次の空きのときにあらためて案内する。
 
 // ★申込み通知メールの届け先（協会の事務局）。この1行だけ直せば変えられる。
-//   ロイさんへの控えは、管理ページの「CC宛先」に登録してある（D1の olive_cc_recipients）。
+//   ロイさんへの控えは、管理ページの「CC宛先」に登録する（D1の olive_cc_recipients）。
 const OLIVE_MAIL_TO = ["nisihara@kagawa-yakult.co.jp"];
 
-// ★申込者あての受付メールに「返信」したときの行き先（協会の事務局）。
+// ★申込者あてのメールに「返信」したときの行き先（協会の事務局）。
 //   OLIVE_MAIL_TO を変えても動かないよう、別に持つ（ロイさんに返信が来ると取り違えが起きるため）。
 const OLIVE_REPLY_TO = "nisihara@kagawa-yakult.co.jp";
 
@@ -581,23 +592,61 @@ const OLIVE_PLAYERS_MIN = 1;
 // 区分と締切。ページ側の AREA・DEADLINE と必ず同じにすること。
 const OLIVE_AREAS = { "香川県内": "2026-10-23", "香川県外": "2026-11-17" };
 
-// 協会の連絡先（申込者あての受付メールの末尾に載せる）
+// 区分ごとの申込みページ（キャンセル待ちの方への案内メールに載せる）と、キャンセル待ち番号の頭につける文字
+const OLIVE_PAGES = {
+  "香川県内": "https://royschannel.com/olive2-kennai",
+  "香川県外": "https://royschannel.com/olive2-kengai",
+};
+const OLIVE_NUMBER_PREFIX = { "香川県内": "県内", "香川県外": "県外" };
+
+// 空きの案内から、申し込みを待つ時間（3日。ロイさんの指示）
+const OLIVE_OFFER_HOURS = 72;
+
+// 協会の連絡先（申込者あてのメールの末尾に載せる）
 const OLIVE_OFFICE_SIGNATURE =
   `香川県バウンドテニス協会 事務局　西原 敏夫\n` +
   `TEL 0875-73-3458 ／ FAX 0875-73-3457\n` +
   `E-mail nisihara@kagawa-yakult.co.jp\n`;
 
-// 受付組数の上限（区分ごと）。管理ページで設定し、D1の olive_limits に入れる。行が無い区分は上限なし。
-// 数えるのは olive_applications の行数なので、管理ページで重複などを削除すると、その分だけ枠が空く。
+const OLIVE_COLS =
+  "area, applied_date, team_name, manager_no, leader_name, leader_kana, postal_code, address, tel, email, players";
+
+// ---------- キャンセル待ち番号 ----------
+
+// olive_waitlist の行 → 「県内-007」
+function oliveWaitNumber(row) {
+  return `${OLIVE_NUMBER_PREFIX[row.area] || ""}-${String(row.id).padStart(3, "0")}`;
+}
+
+// 「県内-007」「県内７」「県内ー007」なども受け付けて { area, id } にする。合わなければ null
+function parseOliveWaitNumber(s) {
+  const t = (s || "")
+    .toString()
+    .trim()
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[\s\-－ー―‐−]/g, "");
+  const m = t.match(/^(県内|県外)0*(\d{1,6})$/);
+  if (!m) return null;
+  return { area: m[1] === "県内" ? "香川県内" : "香川県外", id: parseInt(m[2], 10) };
+}
+
+// ---------- 受付組数の上限 ----------
+
+// 区分ごとの状態。vacancy＝上限に対して空きがある、open＝フォームからの通常の申込みを受け付ける
+// （キャンセル待ちがいるあいだは、空きがあっても通常の申込みは受け付けない。キャンセル待ちの方を優先するため）
 async function getOliveLimitStatus(env, area) {
   const lim = await env.DB.prepare(`SELECT max_teams FROM olive_limits WHERE area = ?`).bind(area).first();
   const max = lim && lim.max_teams > 0 ? lim.max_teams : null;
   const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM olive_applications WHERE area = ?`).bind(area).first();
   const count = row ? row.n : 0;
-  return { max, count, open: max == null || count < max };
+  const w = await env.DB.prepare(`SELECT COUNT(*) AS n FROM olive_waitlist WHERE area = ?`).bind(area).first();
+  const waiting = w ? w.n : 0;
+  const vacancy = max == null || count < max;
+  return { max, count, waiting, vacancy, open: vacancy && waiting === 0 };
 }
 
-// 申込みフォームを開いたときに、その区分がまだ受け付けているかを返す（キー不要。組数・上限の数は外に出さない）
+// 申込みフォームを開いたときに、その区分が通常の申込みを受け付けているかを返す（キー不要。組数・上限の数は出さない）
+// reason: "full"（定員）／"waitlist"（空きはあるが、キャンセル待ちの方にご案内中）
 async function handleOliveStatus(request, env) {
   const area = new URL(request.url).searchParams.get("area") || "";
   if (!Object.prototype.hasOwnProperty.call(OLIVE_AREAS, area)) {
@@ -605,7 +654,7 @@ async function handleOliveStatus(request, env) {
   }
   try {
     const st = await getOliveLimitStatus(env, area);
-    return json({ ok: true, open: st.open });
+    return json({ ok: true, open: st.open, reason: st.open ? undefined : st.vacancy ? "waitlist" : "full" });
   } catch (e) {
     // 確かめられないときは受け付ける側に倒す（送信のときに、もう一度確かめる）
     console.error("olive status error", e);
@@ -614,7 +663,7 @@ async function handleOliveStatus(request, env) {
 }
 
 // 受付組数の上限（管理者用）
-// GET : 区分ごとの { max, count, open } ／ POST {key, area, max} : 設定（max が空なら上限なし）
+// GET : 区分ごとの { max, count, waiting, vacancy, open } ／ POST {key, area, max} : 設定（max が空なら上限なし）
 async function handleOliveLimits(request, env) {
   if (request.method === "GET") {
     if (!(await checkOliveAdmin(request, env))) {
@@ -623,8 +672,6 @@ async function handleOliveLimits(request, env) {
     const limits = {};
     for (const area of Object.keys(OLIVE_AREAS)) {
       limits[area] = await getOliveLimitStatus(env, area);
-      const w = await env.DB.prepare(`SELECT COUNT(*) AS n FROM olive_waitlist WHERE area = ?`).bind(area).first();
-      limits[area].waiting = w ? w.n : 0;
     }
     return json({ ok: true, limits });
   }
@@ -663,18 +710,20 @@ async function handleOliveLimits(request, env) {
       console.error("d1 error (olive_limits)", e);
       return json({ ok: false, error: "save_failed" }, 500);
     }
-    // 上限を増やした・なくしたことで空きが出たら、キャンセル待ちの先頭から自動で繰り上げる
-    let promoted = 0;
+    // 上限を増やした・なくしたことで空きが出たら、キャンセル待ちの方に案内する（減らして空きが無くなったら案内を取り消す）
+    let offered = 0;
     try {
-      promoted = await promoteOliveWaitlist(env, area);
+      offered = await syncOliveOffers(env, area);
     } catch (e) {
-      console.error("olive promote error (limits)", e);
+      console.error("olive offer error (limits)", e);
     }
-    return json({ ok: true, promoted });
+    return json({ ok: true, offered });
   }
 
   return json({ ok: false, error: "method_not_allowed" }, 405);
 }
+
+// ---------- 管理キー・送信元 ----------
 
 async function getOliveAdminKey(env) {
   try {
@@ -703,6 +752,8 @@ async function getOliveMailFrom(env) {
   return OLIVE_MAIL_FROM_DEFAULT;
 }
 
+// ---------- 日付の書き方 ----------
+
 // "2026-10-23" → "2026年10月23日（金曜日）"
 function fmtJPDate(iso, withWeekday) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -712,6 +763,16 @@ function fmtJPDate(iso, withWeekday) {
     s += `（${wd}曜日）`;
   }
   return s;
+}
+
+// Date → "2026年10月5日（日）18:00"（日本時間）
+function fmtJPDateTime(date) {
+  const j = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const wd = "日月火水木金土"[j.getUTCDay()];
+  return (
+    `${j.getUTCFullYear()}年${j.getUTCMonth() + 1}月${j.getUTCDate()}日（${wd}）` +
+    `${String(j.getUTCHours()).padStart(2, "0")}:${String(j.getUTCMinutes()).padStart(2, "0")}`
+  );
 }
 
 async function sendResend(env, payload) {
@@ -725,10 +786,7 @@ async function sendResend(env, payload) {
   });
 }
 
-// ---- 申込みの検査・メール・保存（通常の申込み／キャンセル待ちの登録／繰り上げで共通に使う） ----
-
-const OLIVE_COLS =
-  "area, applied_date, team_name, manager_no, leader_name, leader_kana, postal_code, address, tel, email, players";
+// ---------- 申込みの検査・保存 ----------
 
 // 送られてきた申込みを検査して、保存する形（entry。キーは D1 の列名と同じ）にする。問題があれば { error } を返す。
 function parseOliveEntry(body) {
@@ -822,27 +880,76 @@ function oliveEmailOk(e) {
   return !!e.email && isValidEmail(e.email);
 }
 
+function oliveBindValues(e) {
+  return [
+    e.area,
+    e.applied_date,
+    e.team_name,
+    e.manager_no,
+    e.leader_name,
+    e.leader_kana,
+    e.postal_code,
+    e.address,
+    e.tel,
+    e.email,
+    JSON.stringify(e.players),
+  ];
+}
+
 // table は olive_applications（申込み）か olive_waitlist（キャンセル待ち）
 async function insertOliveRow(env, table, e) {
   return env.DB.prepare(
     `INSERT INTO ${table} (created_at, ${OLIVE_COLS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
+    .bind(new Date().toISOString(), ...oliveBindValues(e))
+    .run();
+}
+
+// 空きがあるときだけ申込みに入れる（数える・入れるを1つのSQLで行うので、2人が同時に押しても定員を超えない）。
+// 入れられたら true
+async function insertOliveApplicationIfVacant(env, e) {
+  const st = await getOliveLimitStatus(env, e.area);
+  if (st.max == null) {
+    await insertOliveRow(env, "olive_applications", e);
+    return true;
+  }
+  const r = await env.DB.prepare(
+    `INSERT INTO olive_applications (created_at, ${OLIVE_COLS})
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+     WHERE (SELECT COUNT(*) FROM olive_applications WHERE area = ?) < ?`
+  )
+    .bind(new Date().toISOString(), ...oliveBindValues(e), e.area, st.max)
+    .run();
+  return !!(r && r.meta && r.meta.changes === 1);
+}
+
+// キャンセル待ちの行を、同じ番号（id）のまま元に戻す（申し込めなかったとき用）
+async function restoreOliveWait(env, row) {
+  await env.DB.prepare(
+    `INSERT INTO olive_waitlist (id, created_at, ${OLIVE_COLS}, offered_at, offer_expires)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  )
     .bind(
-      new Date().toISOString(),
-      e.area,
-      e.applied_date,
-      e.team_name,
-      e.manager_no,
-      e.leader_name,
-      e.leader_kana,
-      e.postal_code,
-      e.address,
-      e.tel,
-      e.email,
-      JSON.stringify(e.players)
+      row.id,
+      row.created_at,
+      row.area,
+      row.applied_date,
+      row.team_name,
+      row.manager_no,
+      row.leader_name,
+      row.leader_kana,
+      row.postal_code,
+      row.address,
+      row.tel,
+      row.email,
+      row.players,
+      row.offered_at || null,
+      row.offer_expires || null
     )
     .run();
 }
+
+// ---------- メール ----------
 
 // 通知メールと本人あてのメールで共通の、申込み内容のかたまり
 function oliveDetailText(e) {
@@ -886,110 +993,35 @@ async function getOliveCcList(env) {
   }
 }
 
-// 協会（事務局）への通知メール。送れたら true。
-// kind: "entry"（申込み）／"waitlist"（キャンセル待ちの登録）／"promoted"（キャンセル待ちから繰り上げ）
-async function sendOliveNotice(env, e, kind, position) {
-  const areaLabel = `${e.area}用`;
-  const emailOk = oliveEmailOk(e);
-  const head = {
-    entry: `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）の参加申込みが届きました。\n`,
-    waitlist:
-      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）は受付組数の上限に達しているため、\n` +
-      `キャンセル待ちとして登録がありました（現在 ${position} 番目）。まだ申込みではありません。\n`,
-    promoted:
-      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）で空きが出たため、\n` +
-      `キャンセル待ちの先頭のチームを、自動で申込みに繰り上げました。\n`,
-  }[kind];
-  const foot = {
-    entry: `※申込は先着順です。受付後、参加の可否のお返事をお願いします。\n`,
-    waitlist: `※空きが出たら、登録順に自動で申込みに繰り上げます（そのときにも、このアドレスにお知らせします）。\n`,
-    promoted:
-      (emailOk
-        ? `※申込責任者の方には「繰り上げで受け付けました」とメールでお知らせしました。\n`
-        : `※申込責任者の方は E-mail が無いため、お電話・FAXでお知らせください。\n`) +
-      `※参加の可否のお返事をお願いします。\n`,
-  }[kind];
-  const tag = { entry: "申込み", waitlist: "キャンセル待ち登録", promoted: "繰り上げ受付" }[kind];
-
-  const text =
-    head +
-    `\n` +
-    `申込日　　　　： ${fmtJPDate(e.applied_date, false)}\n` +
-    (kind === "promoted" ? `繰り上げ日　　： ${fmtJPDate(todayJST(), false)}\n` : ``) +
-    `締切　　　　　： ${fmtJPDate(OLIVE_AREAS[e.area], true)}\n` +
-    `\n` +
-    oliveDetailText(e) +
-    `\n` +
-    (emailOk ? `※このメールにそのまま返信すると、申込責任者ご本人（${e.leader_name} 様）に届きます。\n` : ``) +
-    foot;
-
+// 協会（事務局）あてのメール。CC宛先が原因で拒否されたら、CCを外して1回だけ送り直す。送れたら true
+async function sendOliveToOffice(env, subject, text, replyTo) {
   const ccList = await getOliveCcList(env);
   const mailFromAddress = await getOliveMailFrom(env);
-  const notice = {
+  const mail = {
     from: `第2回オリーブ杯 申込みフォーム <${mailFromAddress}>`,
     to: OLIVE_MAIL_TO,
-    reply_to: emailOk ? e.email : undefined,
-    subject: `【第2回オリーブ杯 ${tag}】${e.team_name}（${e.leader_name} 様／${e.area}）`,
+    reply_to: replyTo || undefined,
+    subject,
     text,
   };
-
-  let res = await sendResend(env, { ...notice, cc: ccList.length ? ccList : undefined });
-  // CC宛先が原因で送信そのものが拒否されたときは、CCを外して1回だけ送り直す（取りこぼさないため）
+  let res = await sendResend(env, { ...mail, cc: ccList.length ? ccList : undefined });
   if (!res.ok && ccList.length) {
-    console.error(`resend error (olive ${kind}, with cc) — retrying without cc`, res.status, await res.text());
-    res = await sendResend(env, notice);
+    console.error("resend error (olive office, with cc) — retrying without cc", res.status, await res.text());
+    res = await sendResend(env, mail);
   }
   if (!res.ok) {
-    console.error(`resend error (olive ${kind})`, res.status, await res.text());
+    console.error("resend error (olive office)", res.status, await res.text());
     return false;
   }
   return true;
 }
 
-// 申込責任者あてのメール（E-mail があるときだけ呼ぶ）。失敗しても申込み・登録は成功のまま。
-async function sendOliveConfirm(env, e, kind, position) {
+// 申込み本人あてのメール。失敗しても処理は止めない
+async function sendOliveToApplicant(env, to, subject, body) {
   try {
-    const areaLabel = `${e.area}用`;
-    const intro = {
-      entry:
-        `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）への\n` +
-        `参加申込みをいただき、ありがとうございます。\n` +
-        `以下の内容で受け付けました。\n`,
-      waitlist:
-        `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）は、申込みが定員に達しているため、\n` +
-        `以下の内容で「キャンセル待ち」として登録しました。現在 ${position} 番目です。\n` +
-        `（まだ参加申込みではありません）\n`,
-      promoted:
-        `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）で取り消しによる空きが出たため、\n` +
-        `キャンセル待ちから繰り上げて、以下の内容で参加申込みを受け付けました。\n`,
-    }[kind];
-    const after = {
-      entry:
-        `申込は先着順で受け付けております。\n` +
-        `参加の可否は、あらためてお電話・FAX・E-mail にてお返事いたします。\n`,
-      waitlist:
-        `取り消しで空きが出た場合は、登録された順に自動で繰り上げて受け付け、\n` +
-        `このアドレスにお知らせします。\n`,
-      promoted:
-        `参加の可否は、あらためてお電話・FAX・E-mail にてお返事いたします。\n` +
-        `ご都合が悪くなった場合は、お手数ですが協会の事務局までご連絡ください。\n`,
-    }[kind];
-    const subject = {
-      entry: `【第2回オリーブ杯】参加申込みを受け付けました（${e.team_name}）`,
-      waitlist: `【第2回オリーブ杯】キャンセル待ちに登録しました（${e.team_name}）`,
-      promoted: `【第2回オリーブ杯】繰り上げで参加申込みを受け付けました（${e.team_name}）`,
-    }[kind];
-
+    const mailFromAddress = await getOliveMailFrom(env);
     const text =
-      `${e.leader_name} 様\n` +
-      `\n` +
-      intro +
-      `\n` +
-      `申込日　　　　： ${fmtJPDate(e.applied_date, false)}\n` +
-      `\n` +
-      oliveDetailText(e) +
-      `\n` +
-      after +
+      body +
       `\n` +
       `このメールにそのまま返信すると、協会の事務局に届きます。\n` +
       `\n` +
@@ -998,71 +1030,366 @@ async function sendOliveConfirm(env, e, kind, position) {
       `\n` +
       `※このメールは、申込みフォームから自動でお送りしています。\n` +
       `※お心当たりがない場合は、お手数ですが破棄してください。\n`;
-
-    const mailFromAddress = await getOliveMailFrom(env);
     const res = await sendResend(env, {
       from: `香川県バウンドテニス協会 事務局 <${mailFromAddress}>`,
-      to: [e.email],
+      to: [to],
       reply_to: OLIVE_REPLY_TO,
       subject,
       text,
     });
     if (!res.ok) {
-      console.error(`resend error (olive confirm ${kind})`, res.status, await res.text());
+      console.error("resend error (olive applicant)", res.status, await res.text());
     }
   } catch (err) {
-    console.error(`confirm mail error (olive ${kind})`, err);
+    console.error("applicant mail error (olive)", err);
   }
 }
 
-// 空きが出たら、キャンセル待ちの先頭から自動で申込みに繰り上げる（ロイさんの指示 2026-09-11）。
-// 繰り上げたチームは olive_waitlist から消し、本人と協会にメールで知らせる。戻り値は繰り上げた組数。
-// 呼ぶのは「管理ページで申込みを削除したとき」と「上限を変えたとき」。
-async function promoteOliveWaitlist(env, area) {
-  let promoted = 0;
-  for (let guard = 0; guard < 200; guard++) {
-    const st = await getOliveLimitStatus(env, area);
-    if (!st.open) break;
-    const row = await env.DB.prepare(`SELECT * FROM olive_waitlist WHERE area = ? ORDER BY id ASC LIMIT 1`)
+// 協会への申込み内容の通知。送れたら true
+// kind: "entry"（申込み）／"waitlist"（キャンセル待ちの登録）／"claimed"（キャンセル待ちの方が番号で申し込んだ）
+async function sendOliveNotice(env, e, kind, info) {
+  info = info || {};
+  const areaLabel = `${e.area}用`;
+  const emailOk = oliveEmailOk(e);
+  const head = {
+    entry: `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）の参加申込みが届きました。\n`,
+    waitlist:
+      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）は受付組数の上限に達しているため、\n` +
+      `キャンセル待ちとして登録がありました。まだ申込みではありません。\n` +
+      `キャンセル待ち番号：${info.number}（${e.area}のキャンセル待ち ${info.position} 組目）\n`,
+    claimed:
+      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）で、キャンセル待ちの方が\n` +
+      `空きの案内を受けて参加申込みをしました（キャンセル待ち番号：${info.number}）。\n`,
+  }[kind];
+  const foot = {
+    entry: `※申込は先着順です。受付後、参加の可否のお返事をお願いします。\n`,
+    waitlist: `※空きが出たら、キャンセル待ちの方全員に自動でメールでご案内します（早い者勝ち）。\n`,
+    claimed: `※キャンセル待ちの記録は消えました。参加の可否のお返事をお願いします。\n`,
+  }[kind];
+  const tag = { entry: "申込み", waitlist: "キャンセル待ち登録", claimed: "キャンセル待ちから申込み" }[kind];
+
+  const text =
+    head +
+    `\n` +
+    `申込日　　　　： ${fmtJPDate(e.applied_date, false)}\n` +
+    `締切　　　　　： ${fmtJPDate(OLIVE_AREAS[e.area], true)}\n` +
+    `\n` +
+    oliveDetailText(e) +
+    `\n` +
+    (emailOk ? `※このメールにそのまま返信すると、申込責任者ご本人（${e.leader_name} 様）に届きます。\n` : ``) +
+    foot;
+
+  return sendOliveToOffice(
+    env,
+    `【第2回オリーブ杯 ${tag}】${e.team_name}（${e.leader_name} 様／${e.area}）`,
+    text,
+    emailOk ? e.email : undefined
+  );
+}
+
+// 申込責任者への控え（E-mail があるときだけ呼ぶ）
+// kind: "entry"（申込み）／"waitlist"（キャンセル待ちの登録）／"claimed"（キャンセル待ちから申込み）
+async function sendOliveConfirm(env, e, kind, info) {
+  info = info || {};
+  const areaLabel = `${e.area}用`;
+  const intro = {
+    entry:
+      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）への\n` +
+      `参加申込みをいただき、ありがとうございます。\n` +
+      `以下の内容で受け付けました。\n`,
+    waitlist:
+      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）は、申込みが定員に達しているため、\n` +
+      `以下の内容で「キャンセル待ち」として登録しました。（まだ参加申込みではありません）\n` +
+      `\n` +
+      `　　キャンセル待ち番号：${info.number}\n` +
+      `\n` +
+      `この番号は、空きが出たときのお申込みに使います。大切に保管してください。\n`,
+    claimed:
+      `第2回 オリーブ杯バウンドテニス大会（${areaLabel}）への\n` +
+      `キャンセル待ちからの参加申込みをいただき、ありがとうございます。\n` +
+      `以下の内容で受け付けました。（キャンセル待ち番号 ${info.number} の登録は、これで終わりです）\n`,
+  }[kind];
+  const after = {
+    entry:
+      `申込は先着順で受け付けております。\n` +
+      `参加の可否は、あらためてお電話・FAX・E-mail にてお返事いたします。\n`,
+    waitlist:
+      `取り消しで空きが出た場合は、キャンセル待ちの方全員に、このアドレスあてにメールでご案内します。\n` +
+      `ご案内のメールが届いたら、申込みページで「キャンセル待ち番号」と「このE-mail」を入れて呼び出し、\n` +
+      `お申込みください。空きの数に限りがあるため、先にお申込みいただいた方から受け付けます。\n`,
+    claimed: `参加の可否は、あらためてお電話・FAX・E-mail にてお返事いたします。\n`,
+  }[kind];
+  const subject = {
+    entry: `【第2回オリーブ杯】参加申込みを受け付けました（${e.team_name}）`,
+    waitlist: `【第2回オリーブ杯】キャンセル待ちに登録しました（番号 ${info.number}）`,
+    claimed: `【第2回オリーブ杯】参加申込みを受け付けました（${e.team_name}）`,
+  }[kind];
+
+  const body =
+    `${e.leader_name} 様\n` +
+    `\n` +
+    intro +
+    `\n` +
+    `申込日　　　　： ${fmtJPDate(e.applied_date, false)}\n` +
+    `\n` +
+    oliveDetailText(e) +
+    `\n` +
+    after;
+  await sendOliveToApplicant(env, e.email, subject, body);
+}
+
+// キャンセル待ちの方への「空きが出ました」の案内
+async function sendOliveOffer(env, row, expires) {
+  const number = oliveWaitNumber(row);
+  const url = `${OLIVE_PAGES[row.area]}?w=${String(row.id).padStart(3, "0")}`;
+  const body =
+    `${row.leader_name} 様\n` +
+    `\n` +
+    `第2回 オリーブ杯バウンドテニス大会（${row.area}用）で、取り消しにより空きが出ました。\n` +
+    `キャンセル待ちにご登録の方みなさまに、このメールをお送りしています。\n` +
+    `空きの数に限りがあるため、先にお申込みいただいた方から受け付けます（早い者勝ち）。\n` +
+    `\n` +
+    `■ お申込みのしかた\n` +
+    `1. 下のページを開きます。\n` +
+    `   ${url}\n` +
+    `2. 「キャンセル待ち番号」と「ご登録の E-mail」を入れて「呼び出す」を押します。\n` +
+    `     キャンセル待ち番号：${number}\n` +
+    `     ご登録の E-mail　 ：${row.email}\n` +
+    `3. ご登録の内容が表示されます。変更があれば直し、なければそのまま\n` +
+    `   「この内容を確認する」→「この内容で申し込む」を押してください。\n` +
+    `\n` +
+    `■ 期限\n` +
+    `${fmtJPDateTime(expires)} までにお申込みください。\n` +
+    `期限を過ぎると、キャンセル待ちから外れますので、ご了承ください。\n` +
+    `※先にほかの方のお申込みで空きが埋まった場合は、引き続きキャンセル待ちのまま（番号もそのまま）です。\n`;
+  await sendOliveToApplicant(env, row.email, `【第2回オリーブ杯】空きが出ました（キャンセル待ち番号 ${number}）`, body);
+}
+
+// 期限までに申し込まなかった方への連絡
+async function sendOliveExpired(env, row) {
+  const number = oliveWaitNumber(row);
+  const body =
+    `${row.leader_name} 様\n` +
+    `\n` +
+    `第2回 オリーブ杯バウンドテニス大会（${row.area}用）のキャンセル待ち（番号 ${number}）について、\n` +
+    `空きのご案内の期限（${fmtJPDateTime(new Date(row.offer_expires))}）までにお申込みがなかったため、\n` +
+    `キャンセル待ちから外れました。\n` +
+    `\n` +
+    `ご参加を希望される場合は、お手数ですが協会の事務局までご連絡ください。\n`;
+  await sendOliveToApplicant(env, row.email, `【第2回オリーブ杯】キャンセル待ちの期限が過ぎました（番号 ${number}）`, body);
+}
+
+// ---------- キャンセル待ちの案内・期限切れ ----------
+
+// 案内の期限が過ぎた方をキャンセル待ちから外す（本人と協会に知らせる）。戻り値は外した組数
+async function expireOliveOffers(env, area) {
+  const now = new Date().toISOString();
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM olive_waitlist WHERE area = ? AND offer_expires IS NOT NULL AND offer_expires < ? ORDER BY id ASC`
+  )
+    .bind(area, now)
+    .all();
+  const gone = [];
+  for (const row of results || []) {
+    const r = await env.DB.prepare(
+      `DELETE FROM olive_waitlist WHERE id = ? AND offer_expires IS NOT NULL AND offer_expires < ?`
+    )
+      .bind(row.id, now)
+      .run();
+    if (!r || !r.meta || r.meta.changes !== 1) continue;
+    gone.push(row);
+    await sendOliveExpired(env, row);
+  }
+  if (gone.length) {
+    await sendOliveToOffice(
+      env,
+      `【第2回オリーブ杯 期限切れ】${area}（キャンセル待ち ${gone.length} 組を外しました）`,
+      `第2回 オリーブ杯バウンドテニス大会（${area}用）で、空きのご案内の期限までに申し込まなかった\n` +
+        `キャンセル待ちの方を、キャンセル待ちから外しました（ご本人にはメールでお知らせ済み）。\n` +
+        `\n` +
+        gone.map((r) => `・${oliveWaitNumber(r)}　${r.team_name}（${r.leader_name} 様）`).join("\n") +
+        `\n`
+    );
+  }
+  return gone.length;
+}
+
+// 期限切れを外したうえで、空きがあれば、まだ案内していないキャンセル待ちの方全員に案内する。
+// 空きが無ければ（埋まった・上限を減らした）、案内済みを取り消す（次の空きのときに、あらためて案内する）。
+// 戻り値は、新しく案内した組数。呼ぶのは「申込みの削除」「上限の変更」「キャンセル待ちの登録・申込み」「1時間ごとの見回り」。
+async function syncOliveOffers(env, area) {
+  await expireOliveOffers(env, area);
+  const st = await getOliveLimitStatus(env, area);
+  if (!st.vacancy) {
+    await env.DB.prepare(
+      `UPDATE olive_waitlist SET offered_at = NULL, offer_expires = NULL WHERE area = ? AND offered_at IS NOT NULL`
+    )
       .bind(area)
-      .first();
-    if (!row) break;
-
-    // 先にキャンセル待ちから消してから申込みに入れる（同時に2回動いても、同じチームを二重に繰り上げないため）
-    const del = await env.DB.prepare(`DELETE FROM olive_waitlist WHERE id = ?`).bind(row.id).run();
-    if (!del || !del.meta || del.meta.changes !== 1) continue; // ほかの処理が先に繰り上げた
-
-    const e = oliveRowToEntry(row);
-    try {
-      await insertOliveRow(env, "olive_applications", e);
-    } catch (err) {
-      // 申込みに入れられなかったら、キャンセル待ちに戻す（順番は最後になるが、消えるよりよい）
-      console.error("d1 insert error (olive promote)", err);
-      try {
-        await insertOliveRow(env, "olive_waitlist", e);
-      } catch (err2) {
-        console.error("d1 re-insert error (olive promote)", err2, JSON.stringify(row));
-      }
-      break;
-    }
-    promoted++;
-    await sendOliveNotice(env, e, "promoted");
-    if (oliveEmailOk(e)) await sendOliveConfirm(env, e, "promoted");
+      .run();
+    return 0;
   }
-  return promoted;
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM olive_waitlist WHERE area = ? AND offered_at IS NULL ORDER BY id ASC`
+  )
+    .bind(area)
+    .all();
+  const rows = results || [];
+  if (!rows.length) return 0;
+
+  const now = new Date();
+  const expires = new Date(now.getTime() + OLIVE_OFFER_HOURS * 60 * 60 * 1000);
+  const sent = [];
+  for (const row of rows) {
+    const r = await env.DB.prepare(
+      `UPDATE olive_waitlist SET offered_at = ?, offer_expires = ? WHERE id = ? AND offered_at IS NULL`
+    )
+      .bind(now.toISOString(), expires.toISOString(), row.id)
+      .run();
+    if (!r || !r.meta || r.meta.changes !== 1) continue; // ほかの処理が先に案内した
+    sent.push(row);
+    await sendOliveOffer(env, row, expires);
+  }
+  if (sent.length) {
+    await sendOliveToOffice(
+      env,
+      `【第2回オリーブ杯 空きの案内】${area}（キャンセル待ち ${sent.length} 組に案内）`,
+      `第2回 オリーブ杯バウンドテニス大会（${area}用）で空きが出たため、\n` +
+        `キャンセル待ちの方に「空きが出ました」とメールで案内しました（先に申し込んだ方から受付）。\n` +
+        `\n` +
+        `空き　　　　　： ${st.max == null ? "上限なし" : st.max - st.count + " 組"}\n` +
+        `申込みの期限　： ${fmtJPDateTime(expires)} まで\n` +
+        `\n` +
+        sent.map((r) => `・${oliveWaitNumber(r)}　${r.team_name}（${r.leader_name} 様）`).join("\n") +
+        `\n\n` +
+        `※期限までに申し込まなかった方は、キャンセル待ちから外れます（ご本人にメールでお知らせします）。\n`
+    );
+  }
+  return sent.length;
 }
 
-async function promoteOliveAllAreas(env) {
-  let promoted = 0;
+async function syncOliveAllAreas(env) {
+  let offered = 0;
   for (const area of Object.keys(OLIVE_AREAS)) {
     try {
-      promoted += await promoteOliveWaitlist(env, area);
+      offered += await syncOliveOffers(env, area);
     } catch (e) {
-      console.error("olive promote error", area, e);
+      console.error("olive sync error", area, e);
     }
   }
-  return promoted;
+  return offered;
 }
+
+// 番号と登録したE-mailの両方が合うキャンセル待ちの行。合わなければ null
+async function findOliveWaitByClaim(env, claim) {
+  const p = parseOliveWaitNumber(claim && claim.number);
+  const email = ((claim && claim.email) || "").toString().trim().toLowerCase();
+  if (!p || !email) return null;
+  const row = await env.DB.prepare(`SELECT * FROM olive_waitlist WHERE id = ? AND area = ?`).bind(p.id, p.area).first();
+  if (!row || (row.email || "").trim().toLowerCase() !== email) return null;
+  return row;
+}
+
+// キャンセル待ち番号で登録内容を呼び出す（申込みページから。キー不要だが、番号とE-mailの両方が合わないと何も返さない）
+// POST {number, email} → { ok, number, area, canApply, offerExpires, entry（canApply のときだけ） }
+async function handleOliveClaimLookup(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "invalid_json" }, 400);
+  }
+  const p = parseOliveWaitNumber(body.number);
+  if (p) {
+    try {
+      await expireOliveOffers(env, p.area);
+    } catch (e) {
+      console.error("olive expire error (lookup)", e);
+    }
+  }
+  const row = await findOliveWaitByClaim(env, body);
+  if (!row) {
+    return json({ ok: false, error: "claim_not_found" }, 400);
+  }
+  const st = await getOliveLimitStatus(env, row.area);
+  const res = {
+    ok: true,
+    number: oliveWaitNumber(row),
+    area: row.area,
+    canApply: st.vacancy,
+    offerExpires: row.offer_expires || null,
+  };
+  if (st.vacancy) {
+    const e = oliveRowToEntry(row);
+    res.entry = {
+      leader: {
+        kana: e.leader_kana,
+        name: e.leader_name,
+        postalCode: e.postal_code,
+        address: e.address,
+        tel: e.tel,
+        email: e.email,
+      },
+      teamName: e.team_name,
+      playerCount: e.players.length,
+      managerNo: e.manager_no,
+      players: e.players,
+    };
+  }
+  return json(res);
+}
+
+// 番号で呼び出した内容（直した内容）で申し込む
+async function oliveClaimApply(env, e, claim) {
+  try {
+    await expireOliveOffers(env, e.area);
+  } catch (err) {
+    console.error("olive expire error (claim)", err);
+  }
+  const row = await findOliveWaitByClaim(env, claim);
+  if (!row) {
+    return json({ ok: false, error: "claim_not_found" }, 400);
+  }
+  if (row.area !== e.area) {
+    return json({ ok: false, error: "claim_area" }, 400);
+  }
+  if (!oliveEmailOk(e)) {
+    return json({ ok: false, error: "email_required" }, 400);
+  }
+
+  // 先にキャンセル待ちから消してから、空きがあるときだけ申込みに入れる（二重押し・同時の申込みでも定員を超えない）。
+  // 入れられなかったら、キャンセル待ちに同じ番号のまま戻す。
+  const del = await env.DB.prepare(`DELETE FROM olive_waitlist WHERE id = ?`).bind(row.id).run();
+  if (!del || !del.meta || del.meta.changes !== 1) {
+    return json({ ok: false, error: "claim_not_found" }, 400);
+  }
+  let inserted = false;
+  try {
+    inserted = await insertOliveApplicationIfVacant(env, e);
+  } catch (err) {
+    console.error("d1 insert error (olive claim)", err);
+  }
+  if (!inserted) {
+    try {
+      await restoreOliveWait(env, row);
+    } catch (err) {
+      console.error("d1 restore error (olive claim)", err, JSON.stringify(row));
+    }
+    return json({ ok: false, error: "claim_full" }, 409);
+  }
+
+  const number = oliveWaitNumber(row);
+  await sendOliveNotice(env, e, "claimed", { number });
+  await sendOliveConfirm(env, e, "claimed", { number });
+  // 空きが埋まったら、ほかの方の案内済みを取り消す
+  try {
+    await syncOliveOffers(env, e.area);
+  } catch (err) {
+    console.error("olive sync error (claim)", err);
+  }
+  return json({ ok: true, claimed: true, number });
+}
+
+// ---------- 申込み ----------
 
 async function handleOliveApply(request, env) {
   let body;
@@ -1078,43 +1405,59 @@ async function handleOliveApply(request, env) {
   }
   const e = parsed.entry;
 
-  // 受付組数の上限に達しているか。フォームを開いたあとに埋まった場合のため、送信のときにも確かめる。
+  // キャンセル待ち番号で呼び出して申し込む場合
+  if (body.claim) {
+    return oliveClaimApply(env, e, body.claim);
+  }
+
+  // 通常の申込みを受け付けているか（定員・キャンセル待ちの有無）。フォームを開いたあとに変わった場合のため、送信のときにも確かめる。
   // （確かめられないときは受け付ける。申込みを取りこぼさない側に倒す）
-  let full = false;
+  let st = null;
   try {
-    full = !(await getOliveLimitStatus(env, e.area)).open;
+    st = await getOliveLimitStatus(env, e.area);
   } catch (err) {
     console.error("olive limit check error", err);
   }
 
-  if (full) {
-    // 満員のときは、キャンセル待ちの登録として送られてきた場合だけ受け付ける。
-    // E-mail は必須（空きが出て繰り上げたことを知らせるため）。
+  if (st && !st.open) {
+    // 受け付けていないときは、キャンセル待ちの登録として送られてきた場合だけ受け付ける。
+    // E-mail は必須（空きが出たときに案内するため）。
     if (!body.waitlist) {
-      return json({ ok: false, error: "full" }, 409);
+      return json({ ok: false, error: "full", reason: st.vacancy ? "waitlist" : "full" }, 409);
     }
     if (!oliveEmailOk(e)) {
       return json({ ok: false, error: "email_required" }, 400);
     }
+    let id = null;
     try {
-      await insertOliveRow(env, "olive_waitlist", e);
+      const r = await insertOliveRow(env, "olive_waitlist", e);
+      id = r && r.meta ? r.meta.last_row_id : null;
     } catch (err) {
       console.error("d1 insert error (olive waitlist)", err);
       return json({ ok: false, error: "save_failed" }, 500);
     }
+    const number = oliveWaitNumber({ area: e.area, id });
     let position = 1;
     try {
-      const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM olive_waitlist WHERE area = ?`).bind(e.area).first();
+      const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM olive_waitlist WHERE area = ? AND id <= ?`)
+        .bind(e.area, id)
+        .first();
       position = r ? r.n : 1;
     } catch (err) {
       console.error("d1 count error (olive waitlist)", err);
     }
-    await sendOliveNotice(env, e, "waitlist", position); // 失敗しても登録は済んでいる
-    await sendOliveConfirm(env, e, "waitlist", position);
-    return json({ ok: true, waitlisted: true, position });
+    await sendOliveNotice(env, e, "waitlist", { number, position }); // 失敗しても登録は済んでいる
+    await sendOliveConfirm(env, e, "waitlist", { number, position });
+    // 登録した時点で空きがあれば（ほかの方が申し込まずに空いている等）、すぐに案内する
+    try {
+      await syncOliveOffers(env, e.area);
+    } catch (err) {
+      console.error("olive sync error (waitlist)", err);
+    }
+    return json({ ok: true, waitlisted: true, number, position });
   }
 
-  // 通常の申込み（キャンセル待ちのつもりで送られても、空いていれば申込みとして受け付ける）
+  // 通常の申込み（キャンセル待ちのつもりで送られても、受け付けていれば申込みとして受け付ける）
   if (!(await sendOliveNotice(env, e, "entry"))) {
     return json({ ok: false, error: "send_failed" }, 502);
   }
@@ -1134,7 +1477,7 @@ async function handleOliveApply(request, env) {
 
 // 申込み一覧（管理者用）。キー不一致は404（存在を悟らせない）
 // GET              : 一覧を返す
-// DELETE ?ids=1,2  : 指定したIDを削除する。空きが出たら、キャンセル待ちの先頭から自動で繰り上げる
+// DELETE ?ids=1,2  : 指定したIDを削除する。空きが出たら、キャンセル待ちの方に案内する
 async function handleOliveApplications(request, env) {
   if (!(await checkOliveAdmin(request, env))) {
     return json({ ok: false, error: "not_found" }, 404);
@@ -1157,8 +1500,8 @@ async function handleOliveApplications(request, env) {
       console.error("d1 delete error (olive_applications)", e);
       return json({ ok: false, error: "delete_failed" }, 500);
     }
-    const promoted = await promoteOliveAllAreas(env);
-    return json({ ok: true, deleted: ids.length, promoted });
+    const offered = await syncOliveAllAreas(env);
+    return json({ ok: true, deleted: ids.length, offered });
   }
 
   const { results } = await env.DB.prepare(
@@ -1168,7 +1511,8 @@ async function handleOliveApplications(request, env) {
 }
 
 // キャンセル待ちの一覧（管理者用）
-// GET          : 区分ごと・登録順 ／ DELETE ?id= : 取り下げ（削除。本人には知らせない）
+// GET          : 区分ごと・登録順（番号 number と、案内の状態 offered_at・offer_expires 付き）
+// DELETE ?id=  : 削除（本人には知らせない）
 async function handleOliveWaitlist(request, env) {
   if (!(await checkOliveAdmin(request, env))) {
     return json({ ok: false, error: "not_found" }, 404);
@@ -1190,13 +1534,18 @@ async function handleOliveWaitlist(request, env) {
 
   if (request.method === "GET") {
     const { results } = await env.DB.prepare(
-      `SELECT id, created_at, ${OLIVE_COLS} FROM olive_waitlist ORDER BY area ASC, id ASC LIMIT 1000`
+      `SELECT id, created_at, ${OLIVE_COLS}, offered_at, offer_expires FROM olive_waitlist ORDER BY area ASC, id ASC LIMIT 1000`
     ).all();
-    return json({ ok: true, results });
+    return json({
+      ok: true,
+      results: (results || []).map((r) => ({ ...r, number: oliveWaitNumber(r) })),
+    });
   }
 
   return json({ ok: false, error: "method_not_allowed" }, 405);
 }
+
+// ---------- CC宛先・管理キー・送信元（管理者用） ----------
 
 // CC宛先の管理（管理者用）
 // GET : 一覧 ／ POST {key, email} : 追加 ／ DELETE ?id= : 削除
@@ -1486,6 +1835,9 @@ export default {
     if (url.pathname === "/olive-waitlist") {
       return handleOliveWaitlist(request, env);
     }
+    if (url.pathname === "/olive-claim" && request.method === "POST") {
+      return handleOliveClaimLookup(request, env);
+    }
     if (url.pathname === "/track" && request.method === "POST") {
       return handleTrack(request, env);
     }
@@ -1499,5 +1851,11 @@ export default {
       return handlePageStats(env);
     }
     return json({ ok: false, error: "not_found" }, 404);
+  },
+
+  // 1時間ごとの見回り（wrangler.toml の [triggers]）。
+  // オリーブ杯のキャンセル待ちの、空きの案内の期限切れを外し、空きがあれば案内する。
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(syncOliveAllAreas(env));
   },
 };
