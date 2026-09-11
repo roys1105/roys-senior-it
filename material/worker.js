@@ -576,7 +576,8 @@ async function handleBtMailFrom(request, env) {
 //   ロイさんへの控えは、管理ページの「CC宛先」に登録する（D1の olive_cc_recipients）。
 const OLIVE_MAIL_TO = ["nisihara@kagawa-yakult.co.jp"];
 
-// ★申込者あてのメールに「返信」したときの行き先（協会の事務局）。
+// ★申込者あてのメールに「返信」したときの行き先（協会の事務局）の、最初の設定。
+//   管理ページの「申込者からの返信先」で変えられる（D1の olive_reply_to。空欄で保存するとこの値に戻る）。
 //   OLIVE_MAIL_TO を変えても動かないよう、別に持つ（ロイさんに返信が来ると取り違えが起きるため）。
 const OLIVE_REPLY_TO = "nisihara@kagawa-yakult.co.jp";
 
@@ -602,11 +603,14 @@ const OLIVE_NUMBER_PREFIX = { "香川県内": "県内", "香川県外": "県外"
 // 空きの案内から、申し込みを待つ時間（3日。ロイさんの指示）
 const OLIVE_OFFER_HOURS = 72;
 
-// 協会の連絡先（申込者あてのメールの末尾に載せる）
-const OLIVE_OFFICE_SIGNATURE =
-  `香川県バウンドテニス協会 事務局　西原 敏夫\n` +
-  `TEL 0875-73-3458 ／ FAX 0875-73-3457\n` +
-  `E-mail nisihara@kagawa-yakult.co.jp\n`;
+// 協会の連絡先（申込者あてのメールの末尾に載せる）。E-mail は、管理ページで登録した返信先と同じにする
+function oliveOfficeSignature(replyTo) {
+  return (
+    `香川県バウンドテニス協会 事務局　西原 敏夫\n` +
+    `TEL 0875-73-3458 ／ FAX 0875-73-3457\n` +
+    `E-mail ${replyTo}\n`
+  );
+}
 
 const OLIVE_COLS =
   "area, applied_date, team_name, manager_no, leader_name, leader_kana, postal_code, address, tel, email, players";
@@ -750,6 +754,65 @@ async function getOliveMailFrom(env) {
     console.error("d1 select error (olive_mail_from)", e);
   }
   return OLIVE_MAIL_FROM_DEFAULT;
+}
+
+// 申込者あてのメールに「返信」したときの行き先。管理ページで登録した値（D1の olive_reply_to）、無ければ OLIVE_REPLY_TO
+async function getOliveReplyTo(env) {
+  try {
+    const row = await env.DB.prepare(`SELECT email FROM olive_reply_to WHERE id = 1`).first();
+    if (row && row.email) return row.email;
+  } catch (e) {
+    console.error("d1 select error (olive_reply_to)", e);
+  }
+  return OLIVE_REPLY_TO;
+}
+
+// 申込者からの返信先の取得・変更（管理者用）
+// GET : 現在の値 { email, isDefault } ／ POST {key, email} : 変更（email が空なら最初の設定に戻す）
+async function handleOliveReplyTo(request, env) {
+  const method = request.method;
+
+  if (method === "GET") {
+    if (!(await checkOliveAdmin(request, env))) {
+      return json({ ok: false, error: "not_found" }, 404);
+    }
+    const email = await getOliveReplyTo(env);
+    return json({ ok: true, email, isDefault: email === OLIVE_REPLY_TO });
+  }
+
+  if (method === "POST") {
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return json({ ok: false, error: "invalid_json" }, 400);
+    }
+    if (!(await checkOliveAdmin(request, env, (body.key || "").toString()))) {
+      return json({ ok: false, error: "not_found" }, 404);
+    }
+    const email = (body.email || "").toString().trim().slice(0, 200);
+    try {
+      if (!email) {
+        await env.DB.prepare(`DELETE FROM olive_reply_to WHERE id = 1`).run();
+      } else {
+        if (!isValidEmail(email)) {
+          return json({ ok: false, error: "invalid_email" }, 400);
+        }
+        await env.DB.prepare(
+          `INSERT INTO olive_reply_to (id, email, updated_at) VALUES (1, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET email = excluded.email, updated_at = excluded.updated_at`
+        )
+          .bind(email, new Date().toISOString())
+          .run();
+      }
+    } catch (e) {
+      console.error("d1 error (olive_reply_to)", e);
+      return json({ ok: false, error: "save_failed" }, 500);
+    }
+    return json({ ok: true, email: email || OLIVE_REPLY_TO, isDefault: !email });
+  }
+
+  return json({ ok: false, error: "method_not_allowed" }, 405);
 }
 
 // ---------- 日付の書き方 ----------
@@ -1020,20 +1083,21 @@ async function sendOliveToOffice(env, subject, text, replyTo) {
 async function sendOliveToApplicant(env, to, subject, body) {
   try {
     const mailFromAddress = await getOliveMailFrom(env);
+    const replyTo = await getOliveReplyTo(env);
     const text =
       body +
       `\n` +
       `このメールにそのまま返信すると、協会の事務局に届きます。\n` +
       `\n` +
       `──\n` +
-      OLIVE_OFFICE_SIGNATURE +
+      oliveOfficeSignature(replyTo) +
       `\n` +
       `※このメールは、申込みフォームから自動でお送りしています。\n` +
       `※お心当たりがない場合は、お手数ですが破棄してください。\n`;
     const res = await sendResend(env, {
       from: `香川県バウンドテニス協会 事務局 <${mailFromAddress}>`,
       to: [to],
-      reply_to: OLIVE_REPLY_TO,
+      reply_to: replyTo,
       subject,
       text,
     });
@@ -1837,6 +1901,9 @@ export default {
     }
     if (url.pathname === "/olive-claim" && request.method === "POST") {
       return handleOliveClaimLookup(request, env);
+    }
+    if (url.pathname === "/olive-reply-to") {
+      return handleOliveReplyTo(request, env);
     }
     if (url.pathname === "/track" && request.method === "POST") {
       return handleTrack(request, env);
