@@ -891,7 +891,10 @@ function parseOliveEntry(body) {
   const leaderName = s(leader.name, 100);
   const postalCode = s(leader.postalCode, 10); // 任意
   const address = s(leader.address, 300);
-  const tel = s(leader.tel, 40);
+  // TELは「－」や「()」を取り除き、全角の数字は半角にして保存する（例：(0875)73-3458 → 0875733458）
+  const tel = s(leader.tel, 40)
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[-‐‑‒–—―−ー－ｰ()（）]/g, "");
   const email = s(leader.email, 200); // 任意（キャンセル待ちのときは必須。呼び出し側で確かめる）
   const teamName = s(body.teamName, 100);
   const managerNo = parseInt(body.managerNo, 10);
