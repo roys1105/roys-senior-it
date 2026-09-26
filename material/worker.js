@@ -288,7 +288,8 @@ async function handleBtApply(request, env) {
         name,
         kana,
         birthdate,
-        age,
+        // D1はJSの数値を小数で受け取り、TEXT列に「13.0」と入る。文字にしてから渡す（2026-09-26）
+        age == null ? null : String(age),
         tel,
         email,
         postalCode,
