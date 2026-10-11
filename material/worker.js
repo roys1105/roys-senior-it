@@ -2201,6 +2201,77 @@ async function handleAnalyticsPassword(request, env) {
   return json({ ok: true });
 }
 
+// ---- パスワードを忘れたとき・まだ決めていないとき（メールで再設定） ----
+// 管理画面の「パスワードを忘れた」を押すと、下の宛先「だけ」に再設定用のリンクを送る。
+// 宛先は画面からは変えられない（ここを直して deploy する）。リンクは30分・1回限り。
+const ANALYTICS_RESET_MAIL_TO = ["roy.s1105@gmail.com"];
+const ANALYTICS_RESET_MAIL_FROM = "Roy's Channel 管理画面 <kanri@royschannel.com>";
+const ANALYTICS_ADMIN_URL = "https://royschannel.com/access-admin";
+const ANALYTICS_RESET_TTL_SEC = 30 * 60;
+const ANALYTICS_RESET_INTERVAL_SEC = 3 * 60;   // 続けて押されても、3分に1通まで
+
+async function handleAnalyticsResetRequest(request, env) {
+  const now = Math.floor(Date.now() / 1000);
+  // 送りすぎ防止。間隔内なら送らずに「送った」と同じ返事をする（いたずらに悟らせない）
+  const recent = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM analytics_reset WHERE created > ?`
+  ).bind(now - ANALYTICS_RESET_INTERVAL_SEC).first();
+  if (recent && recent.n > 0) return json({ ok: true });
+
+  const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+  const tokenHash = await sha256Hex(token);
+  await env.DB.prepare(
+    `INSERT INTO analytics_reset (token_hash, created, expires, used) VALUES (?, ?, ?, 0)`
+  ).bind(tokenHash, now, now + ANALYTICS_RESET_TTL_SEC).run();
+  await env.DB.prepare(`DELETE FROM analytics_reset WHERE expires < ?`).bind(now - 86400).run();
+
+  const link = `${ANALYTICS_ADMIN_URL}?reset=${token}`;
+  const res = await sendResend(env, {
+    from: ANALYTICS_RESET_MAIL_FROM,
+    to: ANALYTICS_RESET_MAIL_TO,
+    subject: "【アクセス解析】パスワードの再設定",
+    text:
+      "アクセス解析の管理画面で「パスワードを忘れた」が押されました。\n\n" +
+      "下のリンクを開くと、新しいパスワードを決められます（30分間・1回だけ有効）。\n" +
+      link + "\n\n" +
+      "心当たりがなければ、このメールは捨ててください。今のパスワードは変わりません。",
+  });
+  if (!res.ok) {
+    console.error("resend error (analytics reset)", res.status, await res.text());
+    // 送れなかった分は消す（残すと3分間「送った」扱いになり、届かないのに再送できなくなる）
+    await env.DB.prepare(`DELETE FROM analytics_reset WHERE token_hash = ?`).bind(tokenHash).run();
+    return json({ ok: false, error: "send_failed" }, 502);
+  }
+  return json({ ok: true });
+}
+
+async function handleAnalyticsReset(request, env) {
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ ok: false, error: "invalid_json" }, 400); }
+  const token = (body.token || "").toString().replace(/[^0-9a-f]/g, "").slice(0, 64);
+  const next = (body.next || "").toString();
+  if (next.length < 8 || next.length > 100) return json({ ok: false, error: "length" }, 400);
+
+  const now = Math.floor(Date.now() / 1000);
+  const hash = await sha256Hex(token);
+  const row = await env.DB.prepare(
+    `SELECT token_hash FROM analytics_reset WHERE token_hash = ? AND used = 0 AND expires > ?`
+  ).bind(hash, now).first();
+  if (!token || !row) return json({ ok: false, error: "invalid_token" }, 400);
+
+  const salt = crypto.randomUUID();
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE analytics_reset SET used = 1 WHERE token_hash = ?`).bind(hash),
+    env.DB.prepare(
+      `INSERT INTO analytics_admin (id, pw_hash, salt, updated_at) VALUES (1, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET pw_hash = excluded.pw_hash, salt = excluded.salt, updated_at = excluded.updated_at`
+    ).bind(await sha256Hex(salt + ":" + next), salt, nowJSTParts().ts),
+    // 締め出し中でも、再設定したらすぐ入れるようにする
+    env.DB.prepare(`DELETE FROM analytics_login_fail WHERE tag = ?`).bind(await clientTag(request)),
+  ]);
+  return json({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -2225,6 +2296,12 @@ export default {
     }
     if (url.pathname === "/analytics-password" && request.method === "POST") {
       return handleAnalyticsPassword(request, env);
+    }
+    if (url.pathname === "/analytics-reset-request" && request.method === "POST") {
+      return handleAnalyticsResetRequest(request, env);
+    }
+    if (url.pathname === "/analytics-reset" && request.method === "POST") {
+      return handleAnalyticsReset(request, env);
     }
     if (url.pathname === "/contact" && request.method === "POST") {
       return handleContact(request, env);
