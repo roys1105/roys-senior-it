@@ -5,6 +5,26 @@
 
 ---
 
+## 2026-10-11（日）— アクセス計測を2サイト共通の /t.js に置き換え（未デプロイ）
+
+### やったこと
+- `material/worker.js`：`/t.js`（全ページ共通の計測スクリプト）、`/track-page` の v:2（1回ずつを D1 `access_log` に記録。従来の `page_events` も引き続き加算）、管理画面用の `/analytics-data`・`/analytics-log`・`/analytics-password` を追加。本番ホストの一覧は `ACCESS_SITES` の1か所。
+- `index.html`（バンドルの外側）・`tokushoho.html`・`material/hajimete-no-sumaho-kyoshitsu.html`・`material/nouikiiki-tebo.html`：旧計測スクリプト（LIVE_HOSTS）を /t.js の1行に置き換え。type と page は前と同じ値を data-type / data-page で渡している。index.html だけは同期読み込み（バンドル展開より先に確実に走らせるため）。
+- 脳いきいき手帳のアプリ本体（nouikiiki/・nouikiiki-plus/）には入れていない。
+- 管理画面は royschannel.com 側（roys-channel/access-admin.html）。このサイトには入口を置かない（ロイさんの指示）。
+
+### わかったこと・つまずいたこと
+- sendBeacon は text/plain で送るので、Worker 側は `request.text()` → `JSON.parse` で読むよう変えた（旧スニペットの application/json もそのまま読める）。
+
+### 次にやること
+- roys-channel の DEVLOG（同日）の「次にやること」と同じ。Worker を先に deploy してから push。
+
+### 動作確認
+- ローカル（wrangler dev --local＋架空データ1,255件）：パスワード違い→「パスワードが違います」、正しい→表示。7つのタブのグラフ・表、並べ替え・絞り込み・「入口だけ」、スマホ幅375pxで横はみ出しなし、コンソールエラーなし（わざと間違えたときの404だけ）。
+- 計測：ブラウザから /t.js 相当を実行して、日本語の題名・1ページ目だけ訪問・旧集計(page_events)への加算を確認。ロボットUAとlocalhostは記録されないことを確認。
+- パスワード変更（7文字以下は拒否・旧パスワード無効）、連続ミスで429の締め出しを確認。
+- **本番には何も出していない（未デプロイ）。** ライブでの確認は未実施。
+
 ## 2026-09-26（土）— バウンドテニス教室の受付API：年齢を「13.0」でなく「13」で保存するようにした（デプロイずみ）
 
 ### やったこと

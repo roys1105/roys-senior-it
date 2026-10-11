@@ -10,6 +10,8 @@
 // - /stats        : 動画再生の集計結果を返す(既存・KV)
 // - /track-page    : サイト訪問 / 教材ページ閲覧を日別にD1へ記録(新規)
 // - /page-stats    : 訪問数・教材ページ閲覧数の日別集計を返す(新規・D1)
+// - /t.js          : 2サイト全ページ共通の計測スクリプト（2026-10-11〜）
+// - /analytics-*   : アクセス解析の管理画面用（要パスワード・royschannel.com/access-admin から使う）
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -1829,16 +1831,30 @@ async function handleStats(env) {
 }
 
 // 訪問 / 教材ページ閲覧を日別にD1へ記録
+// 2026-10-11〜：全ページ共通の計測スクリプト（/t.js）からは v:2 で届く。
+//   v:2 のときは 1回ずつの記録（access_log）も残す。
+//   type が visit / material のページだけ、従来の日別集計（page_events）にも足す
+//   （Roy's Channel の講座欄「見られた回数」がこちらを読んでいるため）。
+// sendBeacon は Content-Type が text/plain で来るので、本文は文字列として読んでから JSON にする。
 async function handleTrackPage(request, env) {
   let body;
   try {
-    body = await request.json();
+    body = JSON.parse(await request.text());
   } catch (e) {
     body = {};
   }
 
+  if (body.v === 2) {
+    try {
+      await insertAccessLog(request, env, body);
+    } catch (e) {
+      console.error("access_log insert error", e);
+    }
+  }
+
   const type = (body.type || "").toString();
   if (type !== "visit" && type !== "material") {
+    if (body.v === 2) return json({ ok: true });
     return json({ ok: false, error: "invalid_type" }, 400);
   }
 
@@ -1890,12 +1906,325 @@ async function handlePageStats(env) {
   return json({ ok: true, results, totals: totals.results });
 }
 
+// ---- アクセス解析（2026-10-11〜・2サイト共通） ----
+// 記録：各ページが読み込む /t.js が、1ページ開くごとに /track-page へ v:2 で送る → access_log に1行。
+// 閲覧：royschannel.com/access-admin（管理画面）が /analytics-* をパスワード付きで読む。
+//
+// ★本人のアクセスは数えない：URLの末尾に ?roy=1 を付けて一度開いた端末は以後数えない（?roy=0 で戻す）。
+//   2つのサイトは別ドメインなので、royschannel.com と it.royschannel.com で1回ずつ要る。
+// ★IPアドレスは保存しない。保存するのは「どのページを・いつ・どこ経由で・どんな端末で」だけ。
+
+// 本番として数えるホスト名 → サイトの区別。ドメインを変えたら、ここ1か所を直す。
+const ACCESS_SITES = {
+  "royschannel.com": "main",
+  "www.royschannel.com": "main",
+  "roys-channel.pages.dev": "main",
+  "it.royschannel.com": "senior",
+  "roys-senior-it.pages.dev": "senior",
+};
+
+// 各ページに置く計測スクリプト。<script src=".../t.js" async></script> の1行で読み込む。
+// 従来の日別集計にも足したいページは data-type="visit|material" data-page="..." を付ける。
+const TRACK_JS = `(function(){try{
+var s=document.currentScript;
+var H=${JSON.stringify(Object.keys(ACCESS_SITES))};
+if(H.indexOf(location.hostname)<0)return;
+var q=new URLSearchParams(location.search);
+try{var r=q.get("roy");if(r==="1")localStorage.setItem("roy_owner","1");if(r==="0")localStorage.removeItem("roy_owner");if(localStorage.getItem("roy_owner")==="1")return;}catch(e){}
+var ns=1;try{if(sessionStorage.getItem("rc_s")){ns=0}else{sessionStorage.setItem("rc_s","1")}}catch(e){}
+var b={v:2,host:location.hostname,path:location.pathname||"/",title:(document.title||"").slice(0,120),ref:(document.referrer||"").slice(0,300),from:q.get("from")||"",ns:ns};
+if(s&&s.dataset&&s.dataset.type){b.type=s.dataset.type;b.page=s.dataset.page||location.pathname;}
+var u="https://roy-senior-site-api.roy-s1105.workers.dev/track-page",d=JSON.stringify(b);
+if(navigator.sendBeacon&&navigator.sendBeacon(u,d))return;
+fetch(u,{method:"POST",body:d,keepalive:true}).catch(function(){});
+}catch(e){}})();`;
+
+const BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|preview|facebookexternalhit|embedly|curl|wget|python|go-http/i;
+
+// パスの書き方の違いをそろえる（Cloudflare Pages は .html を落として配るため）
+function normalizePath(p) {
+  let s = (p || "/").toString().split("?")[0].split("#")[0].slice(0, 200);
+  if (!s.startsWith("/")) s = "/" + s;
+  s = s.replace(/\/index(\.html)?$/, "/").replace(/\.html$/, "");
+  if (s.length > 1) s = s.replace(/\/+$/, "");
+  return s || "/";
+}
+
+function hostOf(u) {
+  try { return new URL(u).hostname.toLowerCase(); } catch (e) { return ""; }
+}
+
+// どこから来たか、を大きく分ける
+function classifySource(site, refHost, fromTag) {
+  const f = (fromTag || "").toLowerCase();
+  if (f) {
+    if (f.includes("note")) return "note";
+    if (f.includes("youtube") || f.startsWith("yt")) return "YouTube";
+    if (f.includes("line")) return "SNS";
+    return "印つきリンク";
+  }
+  const h = refHost;
+  if (!h) return "直接・ブックマーク";
+  const refSite = ACCESS_SITES[h];
+  if (refSite) return refSite === site ? "サイト内の移動" : "もう一方のサイト";
+  if (/(^|\.)google\.|(^|\.)bing\.com$|(^|\.)yahoo\.co\.jp$|(^|\.)yahoo\.com$|duckduckgo\.com$|ecosia\.org$|baidu\.com$|search\./.test(h)) return "検索";
+  if (/(^|\.)note\.com$|(^|\.)note\.mu$/.test(h)) return "note";
+  if (/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(h)) return "YouTube";
+  if (/(^|\.)facebook\.com$|(^|\.)fb\.com$|(^|\.)instagram\.com$|(^|\.)x\.com$|(^|\.)t\.co$|(^|\.)twitter\.com$|(^|\.)threads\.net$|(^|\.)line\.me$|(^|\.)lin\.ee$/.test(h)) return "SNS";
+  return "ほかのサイト";
+}
+
+function parseUA(ua) {
+  const s = ua || "";
+  let device = "パソコン";
+  if (/iPad|Tablet|(Android(?!.*Mobile))/i.test(s)) device = "タブレット";
+  else if (/Mobi|iPhone|Android/i.test(s)) device = "スマホ";
+  let os = "その他";
+  if (/iPhone|iPad|iPod/i.test(s)) os = "iOS";
+  else if (/Android/i.test(s)) os = "Android";
+  else if (/Windows/i.test(s)) os = "Windows";
+  else if (/Mac OS X|Macintosh/i.test(s)) os = "Mac";
+  else if (/CrOS/i.test(s)) os = "ChromeOS";
+  else if (/Linux/i.test(s)) os = "Linux";
+  let browser = "その他";
+  if (/Line\//i.test(s)) browser = "LINEアプリ内";
+  else if (/FBAN|FBAV|Instagram/i.test(s)) browser = "SNSアプリ内";
+  else if (/Edg\//i.test(s)) browser = "Edge";
+  else if (/SamsungBrowser/i.test(s)) browser = "Samsung";
+  else if (/CriOS|Chrome\//i.test(s)) browser = "Chrome";
+  else if (/FxiOS|Firefox\//i.test(s)) browser = "Firefox";
+  else if (/Safari\//i.test(s)) browser = "Safari";
+  return { device, os, browser };
+}
+
+function nowJSTParts() {
+  const jst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const iso = jst.toISOString();
+  return { ts: iso.slice(0, 19).replace("T", " "), date: iso.slice(0, 10), hour: jst.getUTCHours(), dow: jst.getUTCDay() };
+}
+
+async function insertAccessLog(request, env, body) {
+  const ua = request.headers.get("User-Agent") || "";
+  if (BOT_UA.test(ua)) return;
+  const host = (body.host || "").toString().toLowerCase();
+  const site = ACCESS_SITES[host];
+  if (!site) return;
+
+  const page = normalizePath(body.path);
+  const title = (body.title || "").toString().trim().slice(0, 120);
+  const refUrl = (body.ref || "").toString().trim().slice(0, 300);
+  const refHost = hostOf(refUrl);
+  const fromTag = (body.from || "").toString().trim().replace(/[^0-9A-Za-z_-]/g, "").slice(0, 64);
+  const ns = body.ns ? 1 : 0;
+  const source = classifySource(site, refHost, fromTag);
+  const { device, os, browser } = parseUA(ua);
+  const cf = request.cf || {};
+  const t = nowJSTParts();
+
+  await env.DB.prepare(
+    `INSERT INTO access_log (ts, date, hour, dow, site, page, title, new_session, source, ref_host, ref_url, from_tag, device, os, browser, region, country)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    t.ts, t.date, t.hour, t.dow, site, page, title, ns, source,
+    refHost, refUrl, fromTag, device, os, browser,
+    (cf.region || "").toString().slice(0, 60), (cf.country || "").toString().slice(0, 8)
+  ).run();
+}
+
+// ---- 管理画面のパスワード ----
+// 最初は wrangler secret の ANALYTICS_PASSWORD を使う。
+// 管理画面から変更すると D1（analytics_admin・1行だけ）に「塩つきハッシュ」で保存され、以後はそちらが優先。
+// パスワードそのものはどこにも保存しない。
+// 総当たり対策：同じ接続元から15分に10回まちがえると、15分間は正しくても通さない（接続元はハッシュ化して持つ）。
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function safeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+const ANALYTICS_FAIL_LIMIT = 10;
+const ANALYTICS_FAIL_WINDOW_SEC = 15 * 60;
+
+async function clientTag(request) {
+  const ip = request.headers.get("CF-Connecting-IP") || "local";
+  return (await sha256Hex("rc-analytics:" + ip)).slice(0, 32);
+}
+
+async function checkAnalyticsPassword(request, env, password) {
+  const pw = (password || "").toString();
+  const tag = await clientTag(request);
+  const now = Math.floor(Date.now() / 1000);
+  const since = now - ANALYTICS_FAIL_WINDOW_SEC;
+
+  const fails = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM analytics_login_fail WHERE tag = ? AND at > ?`
+  ).bind(tag, since).first();
+  if (fails && fails.n >= ANALYTICS_FAIL_LIMIT) return "locked";
+
+  let ok = false;
+  if (pw) {
+    const row = await env.DB.prepare(`SELECT pw_hash, salt FROM analytics_admin WHERE id = 1`).first();
+    if (row && row.pw_hash) {
+      ok = safeEqual(await sha256Hex(row.salt + ":" + pw), row.pw_hash);
+    } else if (env.ANALYTICS_PASSWORD) {
+      ok = safeEqual(await sha256Hex(pw), await sha256Hex(env.ANALYTICS_PASSWORD));
+    }
+  }
+  if (ok) return "ok";
+
+  await env.DB.prepare(`INSERT INTO analytics_login_fail (tag, at) VALUES (?, ?)`).bind(tag, now).run();
+  await env.DB.prepare(`DELETE FROM analytics_login_fail WHERE at < ?`).bind(now - 86400).run();
+  return "ng";
+}
+
+// 失敗のときは 404（エンドポイントの存在を悟らせない・既存の管理ページと同じ流儀）。ロック中は 429。
+async function guardAnalytics(request, env, password) {
+  const r = await checkAnalyticsPassword(request, env, password);
+  if (r === "ok") return null;
+  if (r === "locked") return json({ ok: false, error: "locked" }, 429);
+  return json({ ok: false, error: "not_found" }, 404);
+}
+
+function readRange(url) {
+  const re = /^\d{4}-\d{2}-\d{2}$/;
+  let from = url.searchParams.get("from") || "";
+  let to = url.searchParams.get("to") || "";
+  if (!re.test(to)) to = todayJST();
+  if (!re.test(from)) from = "2000-01-01";
+  if (from > to) [from, to] = [to, from];
+  const siteParam = url.searchParams.get("site") || "";
+  const site = siteParam === "main" || siteParam === "senior" ? siteParam : "";
+  return { from, to, site };
+}
+
+// 期間・サイトで絞る WHERE 句と、その値
+function rangeWhere(r) {
+  let w = `date >= ? AND date <= ?`;
+  const b = [r.from, r.to];
+  if (r.site) { w += ` AND site = ?`; b.push(r.site); }
+  return { w, b };
+}
+
+function shiftDate(ymd, days) {
+  const d = new Date(ymd + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// 集計（概要・日別・ページ別・流入元・時間帯・端末・地域）をまとめて返す
+async function handleAnalyticsData(request, env) {
+  const url = new URL(request.url);
+  const denied = await guardAnalytics(request, env, request.headers.get("X-Admin-Key"));
+  if (denied) return denied;
+
+  const r = readRange(url);
+  const { w, b } = rangeWhere(r);
+  const q = (sql, binds = b) => env.DB.prepare(sql).bind(...binds).all().then((x) => x.results);
+
+  // 比較用：直前の同じ長さの期間
+  const span = Math.round((new Date(r.to) - new Date(r.from)) / 86400000) + 1;
+  const prev = { from: shiftDate(r.from, -span), to: shiftDate(r.from, -1), site: r.site };
+  const pw = rangeWhere(prev);
+
+  const sum = `COUNT(*) AS views, SUM(new_session) AS visits`;
+  const [
+    totals, prevTotals, daily, pages, entries, sources, refHosts, fromTags,
+    devices, oses, browsers, hours, dows, heat, regions, sites, firstRow,
+  ] = await Promise.all([
+    q(`SELECT ${sum} FROM access_log WHERE ${w}`),
+    q(`SELECT ${sum} FROM access_log WHERE ${pw.w}`, pw.b),
+    q(`SELECT date, site, ${sum} FROM access_log WHERE ${w} GROUP BY date, site ORDER BY date`),
+    q(`SELECT site, page, MAX(title) AS title, ${sum} FROM access_log WHERE ${w} GROUP BY site, page ORDER BY views DESC LIMIT 200`),
+    q(`SELECT site, page, MAX(title) AS title, COUNT(*) AS visits FROM access_log WHERE ${w} AND new_session = 1 GROUP BY site, page ORDER BY visits DESC LIMIT 100`),
+    q(`SELECT source, COUNT(*) AS visits FROM access_log WHERE ${w} AND new_session = 1 GROUP BY source ORDER BY visits DESC`),
+    q(`SELECT ref_host, source, COUNT(*) AS visits FROM access_log WHERE ${w} AND new_session = 1 AND ref_host != '' GROUP BY ref_host ORDER BY visits DESC LIMIT 100`),
+    q(`SELECT from_tag, site, COUNT(*) AS visits FROM access_log WHERE ${w} AND from_tag != '' GROUP BY from_tag, site ORDER BY visits DESC LIMIT 100`),
+    q(`SELECT device, ${sum} FROM access_log WHERE ${w} GROUP BY device ORDER BY views DESC`),
+    q(`SELECT os, ${sum} FROM access_log WHERE ${w} GROUP BY os ORDER BY views DESC`),
+    q(`SELECT browser, ${sum} FROM access_log WHERE ${w} GROUP BY browser ORDER BY views DESC`),
+    q(`SELECT hour, ${sum} FROM access_log WHERE ${w} GROUP BY hour ORDER BY hour`),
+    q(`SELECT dow, ${sum} FROM access_log WHERE ${w} GROUP BY dow ORDER BY dow`),
+    q(`SELECT dow, hour, COUNT(*) AS views FROM access_log WHERE ${w} GROUP BY dow, hour`),
+    q(`SELECT country, region, COUNT(*) AS visits FROM access_log WHERE ${w} AND new_session = 1 GROUP BY country, region ORDER BY visits DESC LIMIT 100`),
+    q(`SELECT site, ${sum} FROM access_log WHERE ${w} GROUP BY site`),
+    q(`SELECT MIN(date) AS first FROM access_log`, []),
+  ]);
+
+  return json({
+    ok: true, range: r, prevRange: prev,
+    totals: totals[0], prevTotals: prevTotals[0],
+    daily, pages, entries, sources, refHosts, fromTags,
+    devices, oses, browsers, hours, dows, heat, regions, sites,
+    firstDate: (firstRow[0] && firstRow[0].first) || null,
+  });
+}
+
+// 1回ずつの記録（新しい順・最大5000件）。一覧表とCSV用
+async function handleAnalyticsLog(request, env) {
+  const url = new URL(request.url);
+  const denied = await guardAnalytics(request, env, request.headers.get("X-Admin-Key"));
+  if (denied) return denied;
+
+  const r = readRange(url);
+  const { w, b } = rangeWhere(r);
+  const limit = Math.min(5000, Math.max(1, parseInt(url.searchParams.get("limit") || "1000", 10) || 1000));
+  const { results } = await env.DB.prepare(
+    `SELECT id, ts, site, page, title, new_session, source, ref_host, ref_url, from_tag, device, os, browser, region, country
+     FROM access_log WHERE ${w} ORDER BY id DESC LIMIT ?`
+  ).bind(...b, limit).all();
+  const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM access_log WHERE ${w}`).bind(...b).first();
+  return json({ ok: true, rows: results, total: total ? total.n : 0, limit });
+}
+
+// パスワードの変更（今のパスワードが要る）
+async function handleAnalyticsPassword(request, env) {
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ ok: false, error: "invalid_json" }, 400); }
+  const denied = await guardAnalytics(request, env, body.current);
+  if (denied) return denied;
+
+  const next = (body.next || "").toString();
+  if (next.length < 8 || next.length > 100) return json({ ok: false, error: "length" }, 400);
+
+  const salt = crypto.randomUUID();
+  const hash = await sha256Hex(salt + ":" + next);
+  await env.DB.prepare(
+    `INSERT INTO analytics_admin (id, pw_hash, salt, updated_at) VALUES (1, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET pw_hash = excluded.pw_hash, salt = excluded.salt, updated_at = excluded.updated_at`
+  ).bind(hash, salt, nowJSTParts().ts).run();
+  return json({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS_HEADERS });
+    }
+    if (url.pathname === "/t.js" && request.method === "GET") {
+      return new Response(TRACK_JS, {
+        headers: {
+          "Content-Type": "application/javascript; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+          ...CORS_HEADERS,
+        },
+      });
+    }
+    if (url.pathname === "/analytics-data" && request.method === "GET") {
+      return handleAnalyticsData(request, env);
+    }
+    if (url.pathname === "/analytics-log" && request.method === "GET") {
+      return handleAnalyticsLog(request, env);
+    }
+    if (url.pathname === "/analytics-password" && request.method === "POST") {
+      return handleAnalyticsPassword(request, env);
     }
     if (url.pathname === "/contact" && request.method === "POST") {
       return handleContact(request, env);
