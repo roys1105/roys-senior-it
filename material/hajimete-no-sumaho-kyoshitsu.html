@@ -493,7 +493,7 @@
 </head>
 <body>
 
-<a class="top-link" href="../index.html">トップに戻る</a>
+<a class="top-link" href="../index.html" data-back>← 前のページに戻る</a>
 
 <header class="hero">
   <span class="badge">教材のご紹介</span>
@@ -867,7 +867,7 @@
   <img class="kuro-end" src="../image/kuro/kuro.png" alt="黒猫のクロ">
   <h2>焦らず、一緒に、少しずつ。</h2>
   <p>ご家族のペースに合わせて、何度でも一緒に練習しましょう。</p>
-  <a class="back" href="../index.html">トップページに戻る</a>
+  <a class="back" href="../index.html" data-back>前のページに戻る</a>
 </footer>
 
 <script>
@@ -876,6 +876,23 @@ document.querySelectorAll('.checklist-item input').forEach(function(cb){
     cb.closest('.checklist-item').classList.toggle('checked', cb.checked);
   });
 });
+</script>
+
+<script>
+/* 「前のページに戻る」（2026-10-18）：来たページ（Roy's Channel か シニア相談室）があれば、そこへ戻る。
+   ブックマークなどで直接開いたとき・よそのサイトから来たときは、href の場所へ行く。 */
+(function(){
+  var links = document.querySelectorAll('a[data-back]');
+  for (var i = 0; i < links.length; i++) {
+    links[i].addEventListener('click', function (e) {
+      try {
+        var host = document.referrer ? new URL(document.referrer).hostname : '';
+        var ours = /(^|\.)royschannel\.com$/.test(host) || host === 'localhost' || host === '127.0.0.1';
+        if (ours && history.length > 1) { e.preventDefault(); history.back(); }
+      } catch (err) {}
+    });
+  }
+})();
 </script>
 
 </body>
