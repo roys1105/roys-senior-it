@@ -381,6 +381,17 @@ h1, h2, h3, .maru { font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif; 
     <p class="note center">※このアプリは脳トレ・習慣づくりの補助アプリです。<br>医療・治療を目的とするものではありません。</p>
   </section>
 
+  <!-- ===== お名前の変更 ===== -->
+  <section class="screen" id="screen-rename">
+    <h2 class="page-title">✏️ お名前を変える</h2>
+    <div class="card">
+      <p style="margin-bottom:12px;">新しいお名前（ニックネーム）を入れてくださいね。<br>これまでの記録は、そのまま残ります。</p>
+      <input type="text" class="family-input" id="rename-input" maxlength="10" style="border-color: var(--main);">
+      <button class="btn" id="rename-save-btn">この名前にする</button>
+      <button class="btn ghost" id="rename-cancel-btn">やめてホームに戻る</button>
+    </div>
+  </section>
+
   <!-- ===== ホーム ===== -->
   <section class="screen" id="screen-home">
     <h2 class="greeting" id="home-greeting"></h2>
@@ -408,6 +419,7 @@ h1, h2, h3, .maru { font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif; 
 
     <button class="btn ghost" id="home-record-btn">📅 記録を見る</button>
     <button class="btn coral" id="home-family-btn">👪 家族の様子を見る</button>
+    <button class="btn ghost small" id="home-rename-btn">✏️ お名前を変える</button>
 
     <!-- プラス版のご案内（無料版だけに入れている） -->
     <div class="card" style="margin-top:22px;">
@@ -710,6 +722,27 @@ document.getElementById("setup-btn").addEventListener("click", () => {
   document.getElementById("tabbar").classList.add("visible");
   showScreen("home");
 });
+
+/* =========================================================
+   お名前の変更（memberId は変えないので、記録・家族共有はそのまま）
+   ========================================================= */
+document.getElementById("home-rename-btn").addEventListener("click", () => {
+  document.getElementById("rename-input").value = getProfile()?.nickname || "";
+  showScreen("rename");
+});
+
+document.getElementById("rename-save-btn").addEventListener("click", () => {
+  const name = document.getElementById("rename-input").value.trim();
+  if (!name) { alert("ニックネームを入れてくださいね。"); return; }
+  const profile = getProfile();
+  if (!profile) return;
+  profile.nickname = name;
+  storage.set("profile", profile);
+  updateFamilySelf();
+  showScreen("home");
+});
+
+document.getElementById("rename-cancel-btn").addEventListener("click", () => showScreen("home"));
 
 /* =========================================================
    ホーム
