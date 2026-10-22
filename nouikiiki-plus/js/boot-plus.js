@@ -144,8 +144,11 @@ on("set-back", () => showScreen("home"));
 on("set-nickname-save", () => {
   const name = el("set-nickname").value.trim();
   if (!name) { alert("お名前を入れてください。"); return; }
-  const p = getProfile();
-  storage.set("profile", { nickname: name, memberId: p.memberId });
+  /* プラス版の名前は利用者一覧（users）にある。getProfile もそこから読むので、
+     "profile" に書いても画面には出ない（2026-10-22 まで名前が変わらなかった）。 */
+  const u = getCurrentUser();
+  if (u) renameUser(u.id, name);
+  else storage.set("profile", { nickname: name, memberId: getProfile().memberId });
   updateFamilySelf();
   alert("お名前を変更しました。");
   showScreen("home");
